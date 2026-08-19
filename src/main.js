@@ -107,13 +107,13 @@ let closeElapsed = 0;
 let displayProgress = 0;
 let isPlayingBloom = false;
 let isClosing = false;
-let awaitingStart = quality.isMobile && lockedProgress === null;
 const lockedProgress = (() => {
   const raw = new URLSearchParams(location.search).get("p");
   if (raw === null || raw.trim() === "") return null;
   const value = Number(raw);
   return Number.isFinite(value) ? THREE.MathUtils.clamp(value, 0, 1) : null;
 })();
+let awaitingStart = quality.isMobile && lockedProgress === null;
 if (lockedProgress !== null) {
   awaitingStart = false;
   isPlayingBloom = false;
