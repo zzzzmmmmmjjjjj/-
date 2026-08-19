@@ -63,22 +63,22 @@ export function createPetalMaps(kind = "outer", size = 1024) {
 
   const palettes = {
     inner: {
-      deep: [210, 138, 152],
-      mid: [232, 178, 188],
-      tip: [248, 218, 224],
-      edge: [255, 236, 240]
+      deep: [188, 82, 108],
+      mid: [215, 128, 148],
+      tip: [232, 172, 186],
+      edge: [248, 198, 208]
     },
     mid: {
-      deep: [222, 158, 170],
-      mid: [242, 198, 206],
-      tip: [252, 228, 232],
-      edge: [255, 244, 246]
+      deep: [198, 98, 122],
+      mid: [222, 148, 165],
+      tip: [240, 188, 198],
+      edge: [252, 215, 222]
     },
     outer: {
-      deep: [232, 178, 188],
-      mid: [248, 214, 220],
-      tip: [255, 240, 242],
-      edge: [255, 250, 251]
+      deep: [208, 112, 132],
+      mid: [230, 162, 178],
+      tip: [244, 200, 208],
+      edge: [255, 225, 230]
     }
   };
   const palette = palettes[kind];
@@ -91,12 +91,13 @@ export function createPetalMaps(kind = "outer", size = 1024) {
       const xNorm = Math.abs((u - 0.5) * 2);
       const edgeGlow = Math.pow(1 - xNorm, 2.2) * Math.pow(v, 0.62);
       const velvet = 0.9 + Math.sin(u * size * 0.08) * Math.sin(v * size * 0.06) * 0.05;
-      const baseShadow = Math.pow(1 - v, 1.8) * 0.18;
-      const t = Math.pow(v, 0.82);
+      const baseShadow = Math.pow(1 - v, 1.6) * 0.28;
+      const pinkWash = 1 + (1 - v) * 0.12;
+      const t = Math.pow(v, 0.92);
       const baseMix = t * (1 - t) * 4;
-      const r = (palette.deep[0] * (1 - t) * (1 + baseShadow) + palette.mid[0] * baseMix + palette.tip[0] * t) * velvet;
-      const g = (palette.deep[1] * (1 - t) * (1 + baseShadow) + palette.mid[1] * baseMix + palette.tip[1] * t) * velvet;
-      const b = (palette.deep[2] * (1 - t) * (1 + baseShadow) + palette.mid[2] * baseMix + palette.tip[2] * t) * velvet;
+      const r = (palette.deep[0] * (1 - t) * (1 + baseShadow) + palette.mid[0] * baseMix + palette.tip[0] * t) * velvet * pinkWash;
+      const g = (palette.deep[1] * (1 - t) * (1 + baseShadow) + palette.mid[1] * baseMix + palette.tip[1] * t) * velvet * pinkWash;
+      const b = (palette.deep[2] * (1 - t) * (1 + baseShadow) + palette.mid[2] * baseMix + palette.tip[2] * t) * velvet * pinkWash;
       const grain = (rand() - 0.5) * 5;
       const i = (y * size + x) * 4;
       data[i] = THREE.MathUtils.clamp(r + grain, 0, 255);
@@ -104,10 +105,10 @@ export function createPetalMaps(kind = "outer", size = 1024) {
       data[i + 2] = THREE.MathUtils.clamp(b + grain * 0.35, 0, 255);
       data[i + 3] = Math.round(Math.pow(mask, 0.72) * 255);
 
-      const emissiveStrength = (edgeGlow * 0.22 + Math.pow(1 - xNorm, 3) * v * 0.12) * mask;
-      emissiveData[i] = THREE.MathUtils.clamp(palette.edge[0] * emissiveStrength, 0, 255);
-      emissiveData[i + 1] = THREE.MathUtils.clamp(palette.edge[1] * emissiveStrength, 0, 255);
-      emissiveData[i + 2] = THREE.MathUtils.clamp(palette.edge[2] * emissiveStrength, 0, 255);
+      const emissiveStrength = (edgeGlow * 0.18 + Math.pow(1 - xNorm, 3) * v * 0.1) * mask;
+      emissiveData[i] = THREE.MathUtils.clamp(palette.edge[0] * emissiveStrength * 1.08, 0, 255);
+      emissiveData[i + 1] = THREE.MathUtils.clamp(palette.edge[1] * emissiveStrength * 0.82, 0, 255);
+      emissiveData[i + 2] = THREE.MathUtils.clamp(palette.edge[2] * emissiveStrength * 0.88, 0, 255);
       emissiveData[i + 3] = Math.round(emissiveStrength * 255);
     }
   }
@@ -116,7 +117,7 @@ export function createPetalMaps(kind = "outer", size = 1024) {
   emissiveCtx.putImageData(emissiveImage, 0, 0);
 
   ctx.globalCompositeOperation = "multiply";
-  const veinColor = (depth) => `rgba(210, 140, 155, ${Math.max(0.04, 0.18 - depth * 0.022)})`;
+  const veinColor = (depth) => `rgba(180, 90, 115, ${Math.max(0.06, 0.22 - depth * 0.024)})`;
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(size * 0.5, size);
@@ -130,8 +131,8 @@ export function createPetalMaps(kind = "outer", size = 1024) {
   ctx.globalCompositeOperation = "source-over";
 
   const gloss = ctx.createLinearGradient(size * 0.15, 0, size * 0.75, size);
-  gloss.addColorStop(0, "rgba(255,255,255,0.16)");
-  gloss.addColorStop(0.35, "rgba(255,255,255,0.04)");
+  gloss.addColorStop(0, "rgba(255,220,230,0.1)");
+  gloss.addColorStop(0.35, "rgba(255,200,215,0.03)");
   gloss.addColorStop(0.7, "rgba(255,255,255,0)");
   ctx.fillStyle = gloss;
   ctx.fillRect(0, 0, size, size);
@@ -188,10 +189,10 @@ export function createFloatingPetalTexture(size = 256) {
       const v = 1 - y / (size - 1);
       const mask = rosePetalMask(u, v);
       const i = (y * size + x) * 4;
-      const tone = 230 + v * 20 + (rand() - 0.5) * 6;
-      data[i] = THREE.MathUtils.clamp(tone, 0, 255);
-      data[i + 1] = THREE.MathUtils.clamp(tone - 28, 0, 255);
-      data[i + 2] = THREE.MathUtils.clamp(tone - 18, 0, 255);
+      const tone = 215 + v * 28 + (rand() - 0.5) * 8;
+      data[i] = THREE.MathUtils.clamp(tone + 8, 0, 255);
+      data[i + 1] = THREE.MathUtils.clamp(tone - 38, 0, 255);
+      data[i + 2] = THREE.MathUtils.clamp(tone - 22, 0, 255);
       data[i + 3] = Math.round(Math.pow(mask, 0.78) * 255);
     }
   }

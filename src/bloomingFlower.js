@@ -64,13 +64,14 @@ function createRosePetalGeometry({
 }
 
 function createPetalMaterial({ map, emissiveMap }, { transmission, roughness, opacity, thickness, tint }, usePhysical) {
-  const color = new THREE.Color(tint ?? 0xffffff);
+  const color = new THREE.Color(tint ?? 0xffe8ee);
+  const emissive = new THREE.Color(0xffb8c8);
   if (!usePhysical) {
     return new THREE.MeshStandardMaterial({
       map,
       emissiveMap,
-      emissive: new THREE.Color(0xffffff),
-      emissiveIntensity: 0.14,
+      emissive,
+      emissiveIntensity: 0.16,
       color,
       roughness,
       metalness: 0,
@@ -84,8 +85,8 @@ function createPetalMaterial({ map, emissiveMap }, { transmission, roughness, op
   return new THREE.MeshPhysicalMaterial({
     map,
     emissiveMap,
-    emissive: new THREE.Color(0xffffff),
-    emissiveIntensity: 0.1,
+    emissive,
+    emissiveIntensity: 0.12,
     color,
     roughness,
     metalness: 0,
@@ -96,15 +97,26 @@ function createPetalMaterial({ map, emissiveMap }, { transmission, roughness, op
     opacity,
     side: THREE.DoubleSide,
     depthWrite: transmission < 0.2,
-    sheen: 1.0,
-    sheenColor: new THREE.Color(0xffe4ea),
-    sheenRoughness: 0.28,
-    clearcoat: 0.42,
-    clearcoatRoughness: 0.28,
-    specularIntensity: 0.72,
-    specularColor: new THREE.Color(0xfff6f8),
-    envMapIntensity: 0.62
+    sheen: 0.95,
+    sheenColor: new THREE.Color(0xffc8d4),
+    sheenRoughness: 0.32,
+    clearcoat: 0.36,
+    clearcoatRoughness: 0.32,
+    specularIntensity: 0.62,
+    specularColor: new THREE.Color(0xffe0e8),
+    envMapIntensity: 0.55
   });
+}
+
+/** 不规则角度分布，避免每层花瓣等间距排列 */
+function scatterAngles(count, rand, twist = 0) {
+  const angles = [];
+  let cursor = twist + (rand() - 0.5) * 0.4;
+  for (let i = 0; i < count; i++) {
+    angles.push(cursor);
+    cursor += (Math.PI * 2) / count + (rand() - 0.5) * 0.42;
+  }
+  return angles;
 }
 
 /** 玫瑰同心层：由内向外逐层包裹再舒展，每层错开角度 */
@@ -137,7 +149,8 @@ export function createBloomingFlower(quality = {}) {
   const rand = mulberry32(20260819);
   const group = new THREE.Group();
   const blossom = new THREE.Group();
-  blossom.position.y = 0.02;
+  blossom.position.set(0.015, 0.02, -0.012);
+  blossom.rotation.set(-0.06, 0.22, 0.11);
   group.add(blossom);
 
   const textureSize = quality.textureSize ?? 1024;
@@ -164,21 +177,22 @@ export function createBloomingFlower(quality = {}) {
   };
 
   const materials = {
-    bud: createPetalMaterial(maps.bud, { transmission: 0.04, thickness: 0.48, roughness: 0.58, opacity: 1, tint: 0xfff2f4 }, usePhysical),
-    inner: createPetalMaterial(maps.inner, { transmission: 0.1, thickness: 0.42, roughness: 0.48, opacity: 1, tint: 0xfff4f6 }, usePhysical),
-    mid: createPetalMaterial(maps.mid, { transmission: 0.24, thickness: 0.34, roughness: 0.34, opacity: 0.98, tint: 0xfff8f9 }, usePhysical),
-    outer: createPetalMaterial(maps.outer, { transmission: 0.36, thickness: 0.28, roughness: 0.26, opacity: 0.94, tint: 0xfffbfc }, usePhysical),
-    guard: createPetalMaterial(maps.guard, { transmission: 0.42, thickness: 0.24, roughness: 0.22, opacity: 0.9, tint: 0xffffff }, usePhysical)
+    bud: createPetalMaterial(maps.bud, { transmission: 0.04, thickness: 0.48, roughness: 0.58, opacity: 1, tint: 0xffc8d4 }, usePhysical),
+    inner: createPetalMaterial(maps.inner, { transmission: 0.1, thickness: 0.42, roughness: 0.48, opacity: 1, tint: 0xffd4dc }, usePhysical),
+    mid: createPetalMaterial(maps.mid, { transmission: 0.22, thickness: 0.34, roughness: 0.36, opacity: 0.98, tint: 0xffdce4 }, usePhysical),
+    outer: createPetalMaterial(maps.outer, { transmission: 0.32, thickness: 0.28, roughness: 0.28, opacity: 0.94, tint: 0xffe6ec }, usePhysical),
+    guard: createPetalMaterial(maps.guard, { transmission: 0.38, thickness: 0.24, roughness: 0.24, opacity: 0.9, tint: 0xffeef2 }, usePhysical)
   };
 
   const petals = [];
   let layerIndex = 0;
+  const leanSide = rand() > 0.5 ? 1 : -1;
 
   for (const whorl of whorls) {
     const kind = whorl.kind;
+    const angles = scatterAngles(whorl.count, rand, whorl.yawOffset + layerIndex * 0.31);
     for (let i = 0; i < whorl.count; i++) {
-      const t = i / whorl.count;
-      const yaw = t * Math.PI * 2 + whorl.yawOffset + (rand() - 0.5) * 0.06;
+      const yaw = angles[i];
       const pivot = new THREE.Group();
       pivot.rotation.y = yaw;
       blossom.add(pivot);
@@ -187,29 +201,36 @@ export function createBloomingFlower(quality = {}) {
       mesh.renderOrder = layerIndex * 20 + i;
       pivot.add(mesh);
 
-      const rollBias = (rand() - 0.5) * (kind === "outer" || kind === "guard" ? 0.22 : 0.12);
-      const droop = kind === "guard" ? 0.08 + rand() * 0.06 : kind === "outer" ? 0.04 + rand() * 0.04 : 0;
+      const isHero = (kind === "outer" || kind === "guard") && rand() > 0.78;
+      const rollBias = (rand() - 0.5) * (kind === "outer" || kind === "guard" ? 0.32 : 0.18);
+      const droop = kind === "guard" ? 0.1 + rand() * 0.1 : kind === "outer" ? 0.05 + rand() * 0.08 : rand() * 0.03;
+      const pitchJitter = (rand() - 0.5) * 0.14;
+      const radiusJitter = 0.82 + rand() * 0.28;
+      const sizeJitter = 0.86 + rand() * 0.28 + (isHero ? 0.14 : 0);
+      const sideBias = Math.sin(yaw * 1.7) * 0.06 * leanSide;
+      const heightJitter = (rand() - 0.5) * 0.012;
 
       petals.push({
         mesh,
         pivot,
         kind,
-        closedPitch: whorl.pitchClosed + droop * -0.5,
-        openPitch: whorl.pitchOpen + droop,
-        closedRoll: rollBias * 0.6,
-        openRoll: rollBias + (kind === "guard" ? 0.12 : 0),
-        closedScale: whorl.scaleClosed * (0.94 + rand() * 0.08),
-        openScale: whorl.scaleOpen * (0.96 + rand() * 0.08),
-        closedWidth: kind === "bud" ? 0.55 : 0.48 + layerIndex * 0.02,
-        openWidth: 1,
-        closedRadius: whorl.radius * 0.35,
-        openRadius: whorl.radius,
-        closedY: whorl.y,
-        openY: whorl.y + (kind === "outer" || kind === "guard" ? -0.008 : 0.004),
-        delay: whorl.delay + i * 0.012 + rand() * 0.015,
-        span: whorl.span,
+        closedPitch: whorl.pitchClosed + droop * -0.5 + pitchJitter + sideBias,
+        openPitch: whorl.pitchOpen + droop + pitchJitter * 0.6 + sideBias * 1.4,
+        closedRoll: rollBias * 0.7 + (isHero ? 0.18 * leanSide : 0),
+        openRoll: rollBias + (kind === "guard" ? 0.16 : isHero ? 0.22 : 0) + sideBias,
+        closedScale: whorl.scaleClosed * sizeJitter,
+        openScale: whorl.scaleOpen * sizeJitter * (isHero ? 1.12 : 1),
+        closedWidth: (kind === "bud" ? 0.55 : 0.46 + layerIndex * 0.02) * (0.9 + rand() * 0.18),
+        openWidth: 0.92 + rand() * 0.16,
+        closedRadius: whorl.radius * 0.32 * radiusJitter,
+        openRadius: whorl.radius * radiusJitter,
+        closedY: whorl.y + heightJitter,
+        openY: whorl.y + heightJitter + (kind === "outer" || kind === "guard" ? -0.01 - rand() * 0.012 : 0.003 + rand() * 0.006),
+        delay: whorl.delay + i * (0.008 + rand() * 0.012) + rand() * 0.025,
+        span: whorl.span * (0.88 + rand() * 0.22),
         phase: rand() * Math.PI * 2,
-        tilt: (rand() - 0.5) * 0.06
+        tilt: (rand() - 0.5) * 0.1,
+        isHero
       });
     }
     layerIndex += 1;
@@ -218,30 +239,32 @@ export function createBloomingFlower(quality = {}) {
   const budCore = new THREE.Mesh(
     new THREE.SphereGeometry(0.06, 18, 18),
     new THREE.MeshPhysicalMaterial({
-      color: 0xf0a8b4,
+      color: 0xe88898,
       roughness: 0.52,
-      emissive: 0xd87888,
-      emissiveIntensity: 0.08,
+      emissive: 0xc86078,
+      emissiveIntensity: 0.1,
       sheen: 0.6,
-      sheenColor: new THREE.Color(0xffd0d8),
+      sheenColor: new THREE.Color(0xffb8c8),
       transparent: true,
       opacity: 1
     })
   );
-  budCore.position.y = 0.05;
+  budCore.position.set(0.008, 0.05, -0.006);
   blossom.add(budCore);
 
   const stemCurve = new THREE.CatmullRomCurve3(
     quality.compactStem
       ? [
-          new THREE.Vector3(0, 0.02, 0),
-          new THREE.Vector3(-0.04, -0.35, 0.03),
-          new THREE.Vector3(0.06, -0.72, -0.02)
+          new THREE.Vector3(0.01, 0.02, 0),
+          new THREE.Vector3(-0.06, -0.28, 0.04),
+          new THREE.Vector3(0.04, -0.58, -0.03),
+          new THREE.Vector3(0.08, -0.72, -0.02)
         ]
       : [
-          new THREE.Vector3(0, 0.02, 0),
-          new THREE.Vector3(-0.05, -0.5, 0.04),
-          new THREE.Vector3(0.08, -1.1, -0.02)
+          new THREE.Vector3(0.01, 0.02, 0),
+          new THREE.Vector3(-0.07, -0.38, 0.05),
+          new THREE.Vector3(0.05, -0.82, -0.03),
+          new THREE.Vector3(0.1, -1.1, -0.02)
         ]
   );
   const stem = new THREE.Mesh(
@@ -254,10 +277,12 @@ export function createBloomingFlower(quality = {}) {
   const sepalMat = new THREE.MeshPhysicalMaterial({ color: 0x2a5038, roughness: 0.65, side: THREE.DoubleSide });
   for (let i = 0; i < 5; i++) {
     const pivot = new THREE.Group();
-    pivot.rotation.y = (i / 5) * Math.PI * 2 + 0.2;
+    pivot.rotation.y = (i / 5) * Math.PI * 2 + 0.35 + (rand() - 0.5) * 0.25;
     const sepal = new THREE.Mesh(sepalGeo, sepalMat);
-    sepal.rotation.x = -1.15;
-    sepal.position.z = 0.035;
+    sepal.rotation.x = -1.12 + (rand() - 0.5) * 0.18;
+    sepal.rotation.z = (rand() - 0.5) * 0.12;
+    sepal.position.z = 0.03 + rand() * 0.012;
+    sepal.scale.setScalar(0.88 + rand() * 0.22);
     pivot.add(sepal);
     blossom.add(pivot);
   }
@@ -294,6 +319,7 @@ export function createBloomingFlower(quality = {}) {
       const local = easeInOutCubic(smoothstep(petal.delay, petal.delay + petal.span, p));
       petal.mesh.rotation.x = THREE.MathUtils.lerp(petal.closedPitch, petal.openPitch, local);
       petal.mesh.rotation.z = THREE.MathUtils.lerp(petal.closedRoll, petal.openRoll, local) + petal.tilt * local;
+      petal.currentRoll = petal.mesh.rotation.z;
       const scale = THREE.MathUtils.lerp(petal.closedScale, petal.openScale, local);
       const width = THREE.MathUtils.lerp(petal.closedWidth, petal.openWidth, local);
       petal.mesh.scale.set(width, scale, scale);
@@ -336,15 +362,20 @@ export function createBloomingFlower(quality = {}) {
   function updateIdle(time, progress, wind = 0) {
     if (progress < 0.98) return;
     for (const petal of petals) {
-      const sway = petal.kind === "guard" || petal.kind === "outer" ? 0.0004 : 0.0002;
-      petal.mesh.rotation.z += Math.sin(time * 0.5 + petal.phase) * sway * (1 + wind);
+      const sway = petal.isHero ? 0.00055 : petal.kind === "guard" || petal.kind === "outer" ? 0.00038 : 0.00022;
+      petal.mesh.rotation.z = petal.currentRoll + Math.sin(time * 0.48 + petal.phase) * sway * (1 + wind);
+      if (petal.isHero) {
+        petal.mesh.rotation.x += Math.sin(time * 0.32 + petal.phase) * 0.00018 * (1 + wind * 0.5);
+      }
     }
-    blossom.rotation.z = Math.sin(time * 0.08) * 0.01 * wind;
+    blossom.rotation.z = 0.11 + Math.sin(time * 0.08) * 0.012 * wind;
+    blossom.rotation.x = -0.06 + Math.sin(time * 0.06 + 0.5) * 0.004 * wind;
   }
 
   function updatePetBreathing(time) {
-    const breath = 1 + Math.sin(time * 0.5) * 0.01;
-    blossom.scale.setScalar(breath);
+    const breath = 1 + Math.sin(time * 0.5) * 0.012;
+    const asym = 1 + Math.sin(time * 0.37 + 1.2) * 0.006;
+    blossom.scale.set(breath * asym, breath, breath * (2 - asym));
   }
 
   setBloom(0);

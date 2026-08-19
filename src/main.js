@@ -293,7 +293,7 @@ function boot() {
   controls.touches.ONE = THREE.TOUCH.ROTATE;
   controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
 
-  keyLight = new THREE.DirectionalLight(0xfff4f6, quality.isMobile ? 2.2 : 2.0);
+  keyLight = new THREE.DirectionalLight(0xffe0e8, quality.isMobile ? 2.0 : 1.85);
   keyLight.position.set(3.8, 4.8, 3.6);
   scene.add(keyLight);
 
@@ -320,7 +320,7 @@ function boot() {
   scene.add(new THREE.HemisphereLight(0xffeef2, 0x1a0810, quality.isMobile ? 0.42 : 0.35));
   scene.add(new THREE.AmbientLight(0x2a1018, 0.06));
 
-  const topLight = new THREE.DirectionalLight(0xfff6f8, quality.isMobile ? 0.55 : 0.75);
+  const topLight = new THREE.DirectionalLight(0xffd0dc, quality.isMobile ? 0.45 : 0.6);
   topLight.position.set(0.2, 5.5, 2.2);
   scene.add(topLight);
 
