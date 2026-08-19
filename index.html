@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#060204" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="朝暮与卿" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="description" content="可在手机和电脑浏览器中观看的高清缓放牡丹。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="朝暮与卿" />
+    <meta property="og:title" content="朝暮与卿 · 缓放牡丹" />
+    <meta
+      property="og:description"
+      content="高清三维牡丹，约 11 秒缓缓开放。手机轻触即看，可分享给朋友。"
+    />
+    <meta property="og:url" content="https://zzzzmmmmmjjjjj.github.io/-/" />
+    <meta
+      property="og:image"
+      content="https://zzzzmmmmmjjjjj.github.io/-/share-cover.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="朝暮与卿 · 缓放牡丹" />
+    <meta
+      name="twitter:description"
+      content="高清三维牡丹，约 11 秒缓缓开放。手机轻触即看，可分享给朋友。"
+    />
+    <meta
+      name="twitter:image"
+      content="https://zzzzmmmmmjjjjj.github.io/-/share-cover.png"
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <title>朝暮与卿 · 粉白玫瑰</title>
+  </head>
+  <body>
+    <canvas id="scene" aria-label="高清缓放的三维牡丹"></canvas>
+
+    <header class="intro">
+      <p class="eyebrow">A ROSE UNFOLDING</p>
+      <h1>朝暮与卿</h1>
+      <p class="subtitle">花开未央 · 此心不渝</p>
+    </header>
+
+    <button class="bloom" type="button" aria-label="重新播放花朵开放">
+      <span></span>
+      <span class="bloom-label">轻触开启</span>
+    </button>
+
+    <button class="music" type="button" aria-label="播放背景音乐" aria-pressed="false">
+      <span class="music-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="music-copy"><strong>The Rose</strong><small>手嶌葵</small></span>
+    </button>
+
+    <p class="hint hidden">单指旋转 · 双指缩放</p>
+
+    <button class="pet-enter" type="button" aria-label="进入桌面宠物模式">
+      <span>桌面宠物</span>
+      <small>旋转 · 粒子 · 常亮</small>
+    </button>
+
+    <p class="pet-hint hidden">轻触两次可重新开花 · 花朵会自动旋转</p>
+
+    <button class="pet-exit" type="button" aria-label="退出桌面宠物模式">退出陪伴</button>
+
+    <button class="start-gate" type="button">
+      <span class="start-gate-ring" aria-hidden="true"></span>
+      <strong>轻触屏幕，花开</strong>
+      <small class="start-gate-note">添加到主屏幕，桌面随时赏 3D 牡丹</small>
+    </button>
+
+    <div class="install-banner hidden" id="install-banner">
+      <div class="install-banner-copy">
+        <strong>添加到主屏幕</strong>
+        <span>桌面一键打开 3D 缓放牡丹</span>
+      </div>
+      <button type="button" id="install-btn">添加</button>
+      <button type="button" class="install-close" aria-label="关闭">×</button>
+    </div>
+
+    <div class="install-guide hidden" id="install-guide">
+      <div class="install-guide-card">
+        <h2>添加到主屏幕</h2>
+        <p class="install-guide-ios">iPhone：Safari 底部 <strong>分享</strong> → <strong>添加到主屏幕</strong></p>
+        <p class="install-guide-android">Android：Chrome 菜单 <strong>⋮</strong> → <strong>添加到主屏幕</strong></p>
+        <button type="button" class="install-guide-close">知道了</button>
+      </div>
+    </div>
+
+    <audio id="background-music" loop playsinline webkit-playsinline preload="metadata"></audio>
+
+    <div class="loading" role="status">
+      <span></span>
+      <p>正在绘制花瓣</p>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

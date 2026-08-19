@@ -1,2 +1,73 @@
-# -
-液压机工控机的开发，替代PLC
+# 高清缓放牡丹
+
+在 Three.js 里用程序化花瓣网格实现「高清、动态、花朵慢慢开放」。电脑和手机浏览器都可以打开，手机上会自动降画质并适配触控。
+
+## 效果
+
+- 约 80 片程序化花瓣，内层粉、外层近白半透明，带分叉叶脉
+- 约 11 秒由花苞缓缓开放，外层先开、内层后开
+- 逆光透出叶脉，辉光与漂浮光斑
+- 点击「再开放一次」可重播
+- 可播放背景音乐 *The Rose*
+- 手机：轻触开始、单指旋转、双指缩放；微信内请用系统浏览器打开
+
+## 本地运行
+
+需要 Node.js 18+。
+
+```bash
+npm install
+npm run dev
+```
+
+电脑打开 http://127.0.0.1:5173
+
+手机同一 Wi-Fi 下打开终端里显示的 Network 地址，例如 `http://192.168.x.x:5173`
+
+生产构建：
+
+```bash
+npm run build
+npm run preview
+```
+
+## 手机怎么看
+
+1. **同一局域网**：电脑跑 `npm run dev`，手机浏览器打开 Network 地址。
+2. **发给别人 / 微信分享**：启用 GitHub Pages 后，直接分享链接  
+   **https://zzzzmmmmmjjjjj.github.io/-/**  
+   首次需在仓库 [Settings → Pages](https://github.com/zzzzmmmmmjjjjj/-/settings/pages) 选择 **Deploy from a branch**，分支选 `gh-pages`、目录 `/ (root)`，保存后等 1～2 分钟生效。
+3. **微信**：点右上角 `···` →「在浏览器中打开」，避免内置 WebView 限制音频和 WebGL。
+4. 第一次进入会显示「轻触屏幕，花开」，点一下才会开始动画并尝试播放音乐（手机浏览器要求用户手势）。
+
+## 实现要点
+
+截图里那种「高清花瓣慢慢张开」，核心不是把整朵花打成粒子再散开，而是：
+
+1. **花瓣几何**：参数曲面做成牡丹瓣形（中段宽、根部收、边缘起皱）
+2. **叶脉贴图**：Canvas 生成分叉叶脉和半透明边缘
+3. **分层开放**：外层花瓣先翻开，内层稍后，约 11 秒缓动
+4. **材质**：内层偏实色粉，外层 `transmission` 半透明，逆光打出脉络
+5. **光斑**：开放过程中再加一层粒子光点
+6. **手机适配**：降低面数与贴图、关闭后期 Bloom、用 `100dvh` 和安全区、触控旋转
+
+## 来源
+
+- 页面与音乐资源基于 [mrsuperguo/qixi-particle-rose](https://github.com/mrsuperguo/qixi-particle-rose)
+- 缓放牡丹为程序化花瓣实现（Vite + Three.js MeshPhysicalMaterial）
+
+
+## 实现要点
+
+截图里那种「高清花瓣慢慢张开」，核心不是把整朵花打成粒子再散开，而是：
+
+1. **花瓣几何**：参数曲面做成牡丹瓣形（中段宽、根部收、边缘起皱）
+2. **叶脉贴图**：Canvas 生成分叉叶脉和半透明边缘
+3. **分层开放**：外层花瓣先翻开，内层稍后，约 11 秒缓动
+4. **材质**：内层偏实色粉，外层 `transmission` 半透明，逆光打出脉络
+5. **光斑**：开放过程中再加一层粒子光点
+
+## 来源
+
+- 页面与音乐资源基于 [mrsuperguo/qixi-particle-rose](https://github.com/mrsuperguo/qixi-particle-rose)
+- 缓放牡丹为程序化花瓣实现（Vite + Three.js MeshPhysicalMaterial）
