@@ -108,6 +108,36 @@ function createPetalMaterial({ map, emissiveMap }, { transmission, roughness, op
   });
 }
 
+/** 附着在单瓣表面的粒子组 */
+function createPetalParticleSystem(count, texture, rand, size) {
+  const positions = new Float32Array(count * 3);
+  const seeds = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    seeds[i * 3] = 0.12 + rand() * 0.76;
+    seeds[i * 3 + 1] = 0.06 + rand() * 0.9;
+    seeds[i * 3 + 2] = rand() * Math.PI * 2;
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  const points = new THREE.Points(
+    geometry,
+    new THREE.PointsMaterial({
+      map: texture,
+      color: 0xffe4ea,
+      size,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true
+    })
+  );
+  return { points, seeds, count };
+}
+
+const PETAL_LENGTH = { bud: 0.48, inner: 0.68, mid: 0.88, outer: 1.06, guard: 1.12 };
+const PETAL_WIDTH = { bud: 0.22, inner: 0.34, mid: 0.42, outer: 0.5, guard: 0.54 };
+
 /** 不规则角度分布，避免每层花瓣等间距排列 */
 function scatterAngles(count, rand, twist = 0) {
   const angles = [];
@@ -158,6 +188,8 @@ export function createBloomingFlower(quality = {}) {
   const segmentsL = quality.petalSegments?.l ?? 56;
   const usePhysical = quality.transmission !== false;
   const sparkleCount = quality.sparkleCount ?? 780;
+  const petalParticleCount = quality.petalParticleCount ?? (quality.lowPoly ? 5 : 8);
+  const petalParticleSize = quality.compactStem ? 0.018 : 0.024;
   const whorls = buildRoseWhorls(quality.lowPoly);
 
   const maps = {
@@ -201,6 +233,14 @@ export function createBloomingFlower(quality = {}) {
       mesh.renderOrder = layerIndex * 20 + i;
       pivot.add(mesh);
 
+      const particleSystem = createPetalParticleSystem(
+        petalParticleCount,
+        createSoftParticleTexture(),
+        rand,
+        petalParticleSize
+      );
+      mesh.add(particleSystem.points);
+
       const isHero = (kind === "outer" || kind === "guard") && rand() > 0.78;
       const rollBias = (rand() - 0.5) * (kind === "outer" || kind === "guard" ? 0.32 : 0.18);
       const droop = kind === "guard" ? 0.1 + rand() * 0.1 : kind === "outer" ? 0.05 + rand() * 0.08 : rand() * 0.03;
@@ -231,7 +271,9 @@ export function createBloomingFlower(quality = {}) {
         span: whorl.span * (0.88 + rand() * 0.22),
         phase: rand() * Math.PI * 2,
         tilt: (rand() - 0.5) * 0.1,
-        isHero
+        isHero,
+        particleSystem,
+        localOpen: 0
       });
     }
     layerIndex += 1;
@@ -352,11 +394,48 @@ export function createBloomingFlower(quality = {}) {
       const y = THREE.MathUtils.lerp(petal.closedY, petal.openY, u);
       // 外瓣后期下垂：玫瑰更自然
       petal.mesh.position.y = y + (isOuter ? -late * (0.010 + (petal.isHero ? 0.004 : 0)) : late * 0.003);
+      petal.localOpen = u;
     }
     budCore.scale.setScalar(0.4 + smoothstep(0.18, 0.62, p) * 0.58);
     budCore.material.opacity = 1 - smoothstep(0.38, 0.66, p);
     budCore.visible = p < 0.7;
-    sparkles.material.opacity = 0.03 + p * 0.30;
+    sparkles.material.opacity = 0.02 + p * 0.38;
+    sparkles.material.size = (quality.compactStem ? 0.028 : 0.038) * (0.55 + p * 0.65);
+  }
+
+  function updatePetalParticles(time, progress) {
+    const global = THREE.MathUtils.clamp(progress, 0, 1);
+    for (const petal of petals) {
+      const sys = petal.particleSystem;
+      if (!sys) continue;
+      const open = petal.localOpen ?? 0;
+      const pulse = 0.72 + Math.sin(time * 1.4 + petal.phase) * 0.28;
+      sys.points.material.opacity = open * (0.12 + global * 0.52) * pulse;
+      sys.points.visible = open > 0.04;
+
+      const len = PETAL_LENGTH[petal.kind] ?? 0.7;
+      const width = PETAL_WIDTH[petal.kind] ?? 0.4;
+      const positions = sys.points.geometry.attributes.position.array;
+
+      for (let i = 0; i < sys.count; i++) {
+        const u = sys.seeds[i * 3];
+        const v = sys.seeds[i * 3 + 1];
+        const phase = sys.seeds[i * 3 + 2];
+        const profile = Math.pow(Math.sin(Math.PI * Math.min(v, 0.995)), 0.62);
+        const drift = Math.sin(time * 0.75 + phase) * 0.007 * open;
+        const lift = Math.sin(time * 1.1 + phase * 1.3) * 0.005 * open;
+        positions[i * 3] = (u - 0.5) * width * profile * 0.92;
+        positions[i * 3 + 1] = v * len + drift + lift;
+        positions[i * 3 + 2] = 0.01 + Math.sin(time * 0.85 + phase) * 0.009 * open;
+      }
+      sys.points.geometry.attributes.position.needsUpdate = true;
+    }
+  }
+
+  function updateBlossomRotation(time, progress) {
+    const bloom = THREE.MathUtils.clamp(progress, 0, 1);
+    const speed = quality.isMobile ? 0.055 : 0.08;
+    blossom.rotation.y = 0.22 + time * speed * (0.2 + bloom * 0.8);
   }
 
   function updatePremiumEffects(time, progress) {
@@ -373,18 +452,24 @@ export function createBloomingFlower(quality = {}) {
   function updateSparkles(time, progress) {
     const positions = sparkles.geometry.attributes.position.array;
     const open = THREE.MathUtils.clamp(progress, 0, 1);
-    for (let i = 0; i < sparkleCount; i++) {
+    const activeRatio = 0.15 + open * 0.85;
+    const activeCount = Math.max(1, Math.floor(sparkleCount * activeRatio));
+    sparkles.geometry.setDrawRange(0, activeCount);
+
+    for (let i = 0; i < activeCount; i++) {
       const seed = sparkleSeeds[i * 3];
       const speed = sparkleSeeds[i * 3 + 1];
-      const radius = 0.05 + sparkleSeeds[i * 3 + 2] * (0.08 + open * 0.62);
-      const rising = (time * 0.045 * speed + seed) % 1;
-      const y = 0.05 + rising * (0.18 + open * 0.72);
-      const angle = seed + time * 0.07 * speed;
+      const radius = 0.04 + sparkleSeeds[i * 3 + 2] * (0.06 + open * 0.72);
+      const rising = (time * 0.04 * speed + seed) % 1;
+      const y = 0.04 + rising * (0.16 + open * 0.82);
+      const angle = seed + time * 0.065 * speed;
       positions[i * 3] = Math.cos(angle) * radius;
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = Math.sin(angle) * radius;
     }
     sparkles.geometry.attributes.position.needsUpdate = true;
+    updatePetalParticles(time, progress);
+    updateBlossomRotation(time, progress);
   }
 
   function updateIdle(time, progress, wind = 0) {
@@ -415,6 +500,7 @@ export function createBloomingFlower(quality = {}) {
     updateSparkles,
     updateIdle,
     updatePremiumEffects,
-    updatePetBreathing
+    updatePetBreathing,
+    updateBlossomRotation
   };
 }

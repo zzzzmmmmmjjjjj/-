@@ -1,4 +1,4 @@
-const CACHE = "rose-v7";
+const CACHE = "rose-v8";
 
 const STATIC_ASSETS = [
   "./manifest.webmanifest",

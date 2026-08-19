@@ -126,12 +126,14 @@ function applyResponsiveLayout() {
     camera.position.set(0.15, portrait ? 0.42 : 0.48, portrait ? 4.85 : 4.55);
     controls.target.set(0, portrait ? 0.22 : 0.26, 0);
     flowerRoot.rotation.set(-0.02, 0.12, 0);
+    flowerRoot.userData.baseRotY = 0.12;
   } else {
     flowerRoot.position.set(0.75, 0.12, 0);
     flowerRoot.scale.setScalar(1.02);
     camera.position.set(1.15, 0.58, 5.35);
     controls.target.set(0.65, 0.22, 0);
     flowerRoot.rotation.set(-0.06, 0.48, -0.12);
+    flowerRoot.userData.baseRotY = 0.48;
   }
   controls.update();
 }
@@ -188,6 +190,7 @@ function animate() {
     flower.setBloom(0);
     flower.updateSparkles(time, 0);
     flower.updatePremiumEffects(time, 0);
+    flower.updateBlossomRotation?.(time, 0);
     atmosphere?.update(time, 0);
     halo.scale.setScalar(1 + Math.sin(time * 0.8) * 0.05);
     goldHalo.scale.setScalar(0.85 + Math.sin(time * 1.1) * 0.06);
@@ -287,7 +290,7 @@ function boot() {
   controls.minDistance = 3.2;
   controls.maxDistance = 9;
   controls.autoRotate = petMode;
-  controls.autoRotateSpeed = petMode ? (quality.isMobile ? 0.42 : 0.55) : 0;
+  controls.autoRotateSpeed = petMode ? (quality.isMobile ? 0.42 : 0.55) : quality.isMobile ? 0.18 : 0.24;
   controls.target.set(0.72, 0.08, 0);
   controls.rotateSpeed = quality.isMobile ? 0.72 : 1;
   controls.touches.ONE = THREE.TOUCH.ROTATE;

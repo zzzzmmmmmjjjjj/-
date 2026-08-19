@@ -29,8 +29,8 @@ export function detectDevice() {
     textureSize: isMobile ? 256 : 1024,
     petalSegments: isMobile ? { w: 14, l: 18 } : { w: 40, l: 56 },
     lowPoly: isMobile,
-    // 粒子更多：让开放过程更有“电影感”
     sparkleCount: isMobile ? 260 : 1400,
+    petalParticleCount: isMobile ? 5 : 8,
     stamenCount: isMobile ? 16 : 56,
     compactStem: isMobile,
     floatingPetals: isMobile ? 20 : 55,
