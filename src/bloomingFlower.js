@@ -191,6 +191,7 @@ export function createBloomingFlower(quality = {}) {
   const petalParticleCount = quality.petalParticleCount ?? (quality.lowPoly ? 5 : 8);
   const petalParticleSize = quality.compactStem ? 0.018 : 0.024;
   const whorls = buildRoseWhorls(quality.lowPoly);
+  const particleTexture = createSoftParticleTexture();
 
   const maps = {
     bud: createPetalMaps("inner", textureSize),
@@ -235,7 +236,7 @@ export function createBloomingFlower(quality = {}) {
 
       const particleSystem = createPetalParticleSystem(
         petalParticleCount,
-        createSoftParticleTexture(),
+        particleTexture,
         rand,
         petalParticleSize
       );
@@ -330,7 +331,7 @@ export function createBloomingFlower(quality = {}) {
     blossom.add(pivot);
   }
 
-  const sparkleTexture = createSoftParticleTexture();
+  const sparkleTexture = particleTexture;
   const sparklePositions = new Float32Array(sparkleCount * 3);
   const sparkleSeeds = new Float32Array(sparkleCount * 3);
   for (let i = 0; i < sparkleCount; i++) {
