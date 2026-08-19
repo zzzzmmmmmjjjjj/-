@@ -167,8 +167,8 @@ export function createBloomingFlower() {
       const openScale = (layer.kind === "inner" ? 0.72 : layer.kind === "mid" ? 0.95 : 1.14) * (0.92 + rand() * 0.14);
       const closedWidth = 0.48 + t * 0.08;
       const openWidth = 1;
-      const delay = t * 0.5 + rand() * 0.03;
-      const span = 0.32 + (1 - t) * 0.18;
+      const delay = t * 0.58 + rand() * 0.02;
+      const span = 0.28 + (1 - t) * 0.2;
 
       petals.push({
         mesh,

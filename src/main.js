@@ -10,6 +10,7 @@ import { createBloomingFlower } from "./bloomingFlower.js";
 
 const BLOOM_DURATION = 11;
 const BLOOM_HOLD = 0.7;
+const CLOSE_DURATION = 1.1;
 
 const canvas = document.querySelector("#scene");
 const loading = document.querySelector(".loading");
@@ -81,7 +82,10 @@ composer.addPass(new OutputPass());
 
 const clock = new THREE.Clock();
 let bloomElapsed = 0;
+let closeElapsed = 0;
+let displayProgress = 0;
 let isPlayingBloom = true;
+let isClosing = false;
 const lockedProgress = (() => {
   const value = Number(new URLSearchParams(location.search).get("p"));
   return Number.isFinite(value) ? THREE.MathUtils.clamp(value, 0, 1) : null;
@@ -106,13 +110,15 @@ function applyResponsiveLayout() {
 
 function replayBloom() {
   if (lockedProgress !== null) return;
-  bloomElapsed = 0;
-  isPlayingBloom = true;
-  bloomLabel.textContent = "开放中";
-  flower.setBloom(0);
+  if (isClosing || isPlayingBloom) return;
+  isClosing = true;
+  closeElapsed = 0;
+  bloomLabel.textContent = "收拢中";
 }
 
 bloomButton.addEventListener("click", () => {
+  if (lockedProgress !== null) return;
+  if (isPlayingBloom || isClosing) return;
   replayBloom();
 });
 
@@ -150,20 +156,30 @@ function animate() {
   const time = clock.elapsedTime;
 
   if (lockedProgress !== null) {
-    flower.setBloom(lockedProgress);
+    displayProgress = lockedProgress;
+  } else if (isClosing) {
+    closeElapsed += delta;
+    const closeT = THREE.MathUtils.clamp(closeElapsed / CLOSE_DURATION, 0, 1);
+    displayProgress = displayProgress * (1 - closeT * closeT * (3 - 2 * closeT));
+    if (closeT >= 1) {
+      isClosing = false;
+      bloomElapsed = 0;
+      isPlayingBloom = true;
+      displayProgress = 0;
+      bloomLabel.textContent = "开放中";
+    }
   } else if (isPlayingBloom) {
     bloomElapsed += delta;
-    const progress = THREE.MathUtils.clamp((bloomElapsed - BLOOM_HOLD) / BLOOM_DURATION, 0, 1);
-    flower.setBloom(progress);
-    if (progress >= 1) {
+    displayProgress = THREE.MathUtils.clamp((bloomElapsed - BLOOM_HOLD) / BLOOM_DURATION, 0, 1);
+    if (displayProgress >= 1) {
       isPlayingBloom = false;
       bloomLabel.textContent = "再开放一次";
     }
   }
 
-  const progress = lockedProgress ?? THREE.MathUtils.clamp((bloomElapsed - BLOOM_HOLD) / BLOOM_DURATION, 0, 1);
-  flower.updateSparkles(time, progress);
-  flower.updateIdle(time, progress);
+  flower.setBloom(displayProgress);
+  flower.updateSparkles(time, displayProgress);
+  flower.updateIdle(time, displayProgress);
   flowerRoot.position.y = flowerRoot.userData.baseY + Math.sin(time * 0.45) * 0.02;
   controls.update(delta);
   composer.render();
