@@ -224,30 +224,31 @@ function animate() {
     closeElapsed = 0;
   }
 
-  const effectProgress = petMode ? Math.max(displayProgress, 0.92) : displayProgress;
+  const effectProgress = displayProgress;
   flower.setBloom(displayProgress);
   flower.updateSparkles(time, effectProgress);
-  flower.updateIdle(time, effectProgress);
   flower.updatePremiumEffects(time, effectProgress);
   if (petMode && displayProgress >= 0.95) flower.updatePetBreathing(time);
   atmosphere?.update(time, effectProgress);
+  const wind = atmosphere?.getWindStrength?.() ?? 0;
+  flower.updateIdle(time, effectProgress, wind);
 
-  const glowPulse = 0.88 + Math.sin(time * 1.15) * 0.12 + displayProgress * 0.32;
-  halo.scale.setScalar((1.08 + displayProgress * 0.22) * glowPulse);
-  halo.material.opacity = 0.06 + displayProgress * 0.1;
-  goldHalo.scale.setScalar((0.75 + displayProgress * 0.45) * (0.9 + Math.sin(time * 1.4) * 0.1));
-  goldHalo.material.opacity = 0.06 + displayProgress * 0.16;
+  const glowPulse = 0.94 + Math.sin(time * 1.15) * 0.05 + displayProgress * 0.08;
+  halo.scale.setScalar((1.0 + displayProgress * 0.1) * glowPulse);
+  halo.material.opacity = 0.025 + displayProgress * 0.04;
+  goldHalo.scale.setScalar((0.62 + displayProgress * 0.16) * (0.95 + Math.sin(time * 1.4) * 0.04));
+  goldHalo.material.opacity = 0.015 + displayProgress * 0.045;
 
   if (bloomPass) {
-    bloomPass.strength = quality.bloomStrength * (0.75 + effectProgress * (petMode ? 0.65 : 0.55));
-    bloomPass.threshold = quality.bloomThreshold - effectProgress * 0.12;
+    bloomPass.strength = quality.bloomStrength * (0.5 + effectProgress * (petMode ? 0.32 : 0.26));
+    bloomPass.threshold = quality.bloomThreshold + effectProgress * 0.1;
   }
 
-  coreLight.intensity = (quality.isMobile ? 6 : 10) * (0.35 + effectProgress * 0.85);
-  keyLight.intensity = (quality.isMobile ? 3.2 : 2.8) * (0.82 + effectProgress * 0.28);
-  rimLight.intensity = (quality.isMobile ? 3.4 : 3.8) * (0.78 + effectProgress * 0.42);
-  fillLight.intensity = (quality.isMobile ? 4.2 : 6.2) * (0.72 + effectProgress * 0.38);
-  bottomLight.intensity = (quality.isMobile ? 2.8 : 4.2) * (0.65 + effectProgress * 0.35);
+  coreLight.intensity = (quality.isMobile ? 3.2 : 5.0) * (0.25 + effectProgress * 0.5);
+  keyLight.intensity = (quality.isMobile ? 1.6 : 1.5) * (0.76 + effectProgress * 0.2);
+  rimLight.intensity = (quality.isMobile ? 1.3 : 1.5) * (0.7 + effectProgress * 0.24);
+  fillLight.intensity = (quality.isMobile ? 2.0 : 2.8) * (0.65 + effectProgress * 0.24);
+  bottomLight.intensity = (quality.isMobile ? 1.2 : 1.8) * (0.6 + effectProgress * 0.22);
 
   if (petMode) controls.autoRotate = true;
   flowerRoot.position.y = flowerRoot.userData.baseY + Math.sin(time * 0.45) * 0.02;
@@ -257,8 +258,8 @@ function animate() {
 
 function boot() {
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x060204, quality.isMobile ? 0.022 : 0.032);
-  scene.background = new THREE.Color(0x060204);
+  scene.fog = new THREE.FogExp2(0x140810, quality.isMobile ? 0.018 : 0.026);
+  scene.background = new THREE.Color(0x140810);
 
   const { width: startWidth, height: startHeight } = viewSize();
   camera = new THREE.PerspectiveCamera(quality.isMobile ? 40 : 38, startWidth / startHeight, 0.1, 80);
@@ -269,7 +270,7 @@ function boot() {
   renderer.setPixelRatio(quality.pixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = quality.isMobile ? 1.22 : 1.08;
+  renderer.toneMappingExposure = quality.isMobile ? 0.96 : 0.88;
 
   hideLoading();
 
@@ -292,58 +293,58 @@ function boot() {
   controls.touches.ONE = THREE.TOUCH.ROTATE;
   controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
 
-  keyLight = new THREE.DirectionalLight(0xfff0e8, quality.isMobile ? 3.2 : 2.8);
-  keyLight.position.set(4.2, 5.6, 4.2);
+  keyLight = new THREE.DirectionalLight(0xfff4f6, quality.isMobile ? 2.2 : 2.0);
+  keyLight.position.set(3.8, 4.8, 3.6);
   scene.add(keyLight);
 
-  rimLight = new THREE.DirectionalLight(0xffa870, quality.isMobile ? 3.4 : 3.8);
-  rimLight.position.set(-4.6, 2.8, -5.2);
+  rimLight = new THREE.DirectionalLight(0xffc8d4, quality.isMobile ? 1.8 : 2.2);
+  rimLight.position.set(-4.2, 2.4, -4.8);
   scene.add(rimLight);
 
-  const backLight = new THREE.DirectionalLight(0xff6080, quality.isMobile ? 1.8 : 2.4);
-  backLight.position.set(0.2, 1.4, -6);
+  const backLight = new THREE.DirectionalLight(0xffa0b0, quality.isMobile ? 0.9 : 1.2);
+  backLight.position.set(0.2, 1.2, -5.5);
   scene.add(backLight);
 
-  fillLight = new THREE.PointLight(0xff8098, quality.isMobile ? 4.2 : 6.2, 12, 2);
-  fillLight.position.set(1.2, 1.4, 3.2);
+  fillLight = new THREE.PointLight(0xffb8c8, quality.isMobile ? 2.8 : 4.0, 12, 2);
+  fillLight.position.set(1.0, 1.2, 2.8);
   scene.add(fillLight);
 
-  bottomLight = new THREE.PointLight(0xff6880, quality.isMobile ? 2.8 : 4.2, 9, 1.8);
-  bottomLight.position.set(0.1, -0.55, 2.2);
+  bottomLight = new THREE.PointLight(0xffa0b0, quality.isMobile ? 1.8 : 2.8, 9, 1.8);
+  bottomLight.position.set(0.1, -0.45, 2.0);
   scene.add(bottomLight);
 
-  coreLight = new THREE.PointLight(0xffc860, quality.isMobile ? 6 : 10, 4.5, 2);
-  coreLight.position.set(0, 0.18, 0.2);
+  coreLight = new THREE.PointLight(0xffd0dc, quality.isMobile ? 2.2 : 3.5, 3.5, 2);
+  coreLight.position.set(0, 0.12, 0.15);
   scene.add(coreLight);
 
-  scene.add(new THREE.HemisphereLight(0xffdce4, 0x18080c, quality.isMobile ? 0.55 : 0.42));
-  scene.add(new THREE.AmbientLight(0x2a0810, 0.08));
+  scene.add(new THREE.HemisphereLight(0xffeef2, 0x1a0810, quality.isMobile ? 0.42 : 0.35));
+  scene.add(new THREE.AmbientLight(0x2a1018, 0.06));
 
   halo = new THREE.Mesh(
-    new THREE.SphereGeometry(2.8, 32, 32),
+    new THREE.SphereGeometry(2.6, 32, 32),
     new THREE.MeshBasicMaterial({
-      color: 0xff5068,
+      color: 0xff8098,
       transparent: true,
-      opacity: 0.09,
+      opacity: 0.04,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.BackSide
     })
   );
-  halo.position.set(0.15, 0.42, -0.6);
+  halo.position.set(0.1, 0.38, -0.5);
   scene.add(halo);
 
   goldHalo = new THREE.Mesh(
-    new THREE.SphereGeometry(1.1, 24, 24),
+    new THREE.SphereGeometry(0.9, 20, 20),
     new THREE.MeshBasicMaterial({
-      color: 0xffb040,
+      color: 0xffc0cc,
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.03,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     })
   );
-  goldHalo.position.set(0, 0.2, 0);
+  goldHalo.position.set(0, 0.18, -0.1);
   scene.add(goldHalo);
 
   atmosphere = createAtmosphere(quality);

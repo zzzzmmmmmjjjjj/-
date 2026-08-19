@@ -26,11 +26,10 @@ html, body {
 
 body {
   background:
-    radial-gradient(circle at 58% 36%, rgba(120, 28, 42, .34), transparent 36%),
-    radial-gradient(circle at 72% 18%, rgba(180, 110, 40, .08), transparent 24%),
-    radial-gradient(circle at 50% 82%, rgba(48, 12, 20, .24), transparent 32%),
-    radial-gradient(circle at 18% 72%, rgba(32, 8, 14, .18), transparent 28%),
-    #060204;
+    radial-gradient(circle at 55% 38%, rgba(80, 32, 48, .22), transparent 38%),
+    radial-gradient(circle at 20% 62%, rgba(48, 20, 32, .14), transparent 32%),
+    radial-gradient(circle at 82% 28%, rgba(60, 28, 40, .12), transparent 28%),
+    #140810;
 }
 
 body::after {
@@ -40,8 +39,8 @@ body::after {
   pointer-events: none;
   z-index: 1;
   background:
-    radial-gradient(circle at center, transparent 36%, rgba(4, 0, 2, .55) 100%),
-    linear-gradient(to top, rgba(255, 120, 140, .04), transparent 32%);
+    radial-gradient(circle at center, transparent 38%, rgba(8, 2, 6, .48) 100%),
+    linear-gradient(105deg, transparent 40%, rgba(255, 220, 230, .03) 50%, transparent 60%);
 }
 
 #scene {

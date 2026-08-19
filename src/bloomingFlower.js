@@ -23,7 +23,7 @@ function mulberry32(seed) {
   };
 }
 
-function createPetalGeometry({ width, length, curl, ruffle, segmentsW = 40, segmentsL = 56 }) {
+function createRosePetalGeometry({ width, length, cup, tipCurl, segmentsW = 40, segmentsL = 56 }) {
   const geometry = new THREE.PlaneGeometry(1, 1, segmentsW, segmentsL);
   const positions = geometry.attributes.position;
   const uvs = geometry.attributes.uv;
@@ -32,17 +32,15 @@ function createPetalGeometry({ width, length, curl, ruffle, segmentsW = 40, segm
     const u = uvs.getX(i);
     const v = uvs.getY(i);
     const xNorm = (u - 0.5) * 2;
-    const profile = Math.pow(Math.sin(Math.PI * Math.pow(Math.min(v, 0.999), 0.82)), 0.54);
-    const edge = 1 - Math.pow(Math.abs(xNorm), 2.2);
+    const profile = Math.pow(Math.sin(Math.PI * Math.pow(Math.min(v, 0.995), 0.68)), 0.72);
+    const edge = 1 - Math.pow(Math.abs(xNorm), 2.6);
     const radial = Math.abs(xNorm);
-    const wave =
-      Math.sin(u * Math.PI * 11 + v * Math.PI * 4.2) * ruffle * radial * (0.42 + v) +
-      Math.sin(u * Math.PI * 18 + v * Math.PI * 2.4) * ruffle * 0.35 * radial * v;
-    const x = xNorm * width * profile * Math.max(edge, 0.06) + wave * 0.42;
+    const heart = v > 0.78 ? 1 - Math.pow((v - 0.78) / 0.22, 1.4) * radial * 0.35 : 1;
+    const x = xNorm * width * profile * Math.max(edge, 0.05) * heart;
     const y = v * length;
-    const cup = Math.sin(v * Math.PI) * curl * (1 - radial * 0.38);
-    const flare = Math.pow(v, 1.65) * curl * 0.42 * radial;
-    const z = cup - flare + wave * 0.85;
+    const bowl = Math.sin(v * Math.PI) * cup * (1 - radial * 0.55);
+    const tip = Math.pow(v, 2.2) * tipCurl * radial;
+    const z = bowl - tip;
     positions.setXYZ(i, x, y, z);
   }
 
@@ -50,35 +48,16 @@ function createPetalGeometry({ width, length, curl, ruffle, segmentsW = 40, segm
   return geometry;
 }
 
-function createLeafGeometry() {
-  const geometry = new THREE.PlaneGeometry(1, 1, 18, 32);
-  const positions = geometry.attributes.position;
-  const uvs = geometry.attributes.uv;
-  for (let i = 0; i < positions.count; i++) {
-    const u = uvs.getX(i);
-    const v = uvs.getY(i);
-    const xNorm = (u - 0.5) * 2;
-    const profile = Math.sin(Math.PI * v);
-    const x = xNorm * 0.28 * profile;
-    const y = v * 1.15;
-    const z = Math.sin(v * Math.PI) * 0.08 + Math.sin(u * Math.PI * 4) * 0.02 * v;
-    positions.setXYZ(i, x, y, z);
-  }
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-function createPetalMaterial({ map, emissiveMap }, { transmission, roughness, metalness, opacity, emissive, thickness }, usePhysical) {
-  const emissiveColor = new THREE.Color(emissive);
+function createPetalMaterial({ map, emissiveMap }, { transmission, roughness, opacity, thickness }, usePhysical) {
   if (!usePhysical) {
     return new THREE.MeshStandardMaterial({
       map,
       emissiveMap,
       emissive: new THREE.Color(0xffffff),
-      emissiveIntensity: 0.55,
+      emissiveIntensity: 0.22,
       color: 0xffffff,
       roughness,
-      metalness,
+      metalness: 0,
       transparent: true,
       opacity,
       side: THREE.DoubleSide,
@@ -90,25 +69,25 @@ function createPetalMaterial({ map, emissiveMap }, { transmission, roughness, me
     map,
     emissiveMap,
     emissive: new THREE.Color(0xffffff),
-    emissiveIntensity: 0.42,
+    emissiveIntensity: 0.16,
     color: 0xffffff,
     roughness,
-    metalness,
+    metalness: 0,
     transmission,
     thickness,
-    ior: 1.35,
+    ior: 1.32,
     transparent: true,
     opacity,
     side: THREE.DoubleSide,
-    depthWrite: transmission < 0.28,
-    sheen: 1.35,
-    sheenColor: new THREE.Color(0xffc8d0),
-    sheenRoughness: 0.22,
-    clearcoat: 0.42,
-    clearcoatRoughness: 0.28,
-    specularIntensity: 0.85,
-    specularColor: new THREE.Color(0xffe0e8),
-    envMapIntensity: 0.95
+    depthWrite: transmission < 0.25,
+    sheen: 0.85,
+    sheenColor: new THREE.Color(0xffe8ee),
+    sheenRoughness: 0.32,
+    clearcoat: 0.28,
+    clearcoatRoughness: 0.35,
+    specularIntensity: 0.55,
+    specularColor: new THREE.Color(0xfff0f4),
+    envMapIntensity: 0.55
   });
 }
 
@@ -124,7 +103,7 @@ export function createBloomingFlower(quality = {}) {
   const segmentsL = quality.petalSegments?.l ?? 56;
   const usePhysical = quality.transmission !== false;
   const sparkleCount = quality.sparkleCount ?? 780;
-  const stamenCount = quality.stamenCount ?? 48;
+  const totalPetals = quality.lowPoly ? 44 : 78;
 
   const maps = {
     inner: createPetalMaps("inner", textureSize),
@@ -133,148 +112,69 @@ export function createBloomingFlower(quality = {}) {
   };
 
   const geometries = {
-    inner: createPetalGeometry({ width: 0.44, length: 0.82, curl: 0.26, ruffle: 0.045, segmentsW, segmentsL }),
-    mid: createPetalGeometry({ width: 0.58, length: 1.08, curl: 0.22, ruffle: 0.07, segmentsW, segmentsL }),
-    outer: createPetalGeometry({ width: 0.78, length: 1.36, curl: 0.16, ruffle: 0.11, segmentsW, segmentsL })
+    inner: createRosePetalGeometry({ width: 0.32, length: 0.62, cup: 0.32, tipCurl: 0.28, segmentsW, segmentsL }),
+    mid: createRosePetalGeometry({ width: 0.4, length: 0.82, cup: 0.26, tipCurl: 0.22, segmentsW, segmentsL }),
+    outer: createRosePetalGeometry({ width: 0.48, length: 1.02, cup: 0.2, tipCurl: 0.16, segmentsW, segmentsL })
   };
 
   const materials = {
-    inner: createPetalMaterial(maps.inner, {
-      transmission: 0.12,
-      thickness: 0.55,
-      roughness: 0.58,
-      metalness: 0.02,
-      opacity: 1,
-      emissive: 0x6a1028
-    }, usePhysical),
-    mid: createPetalMaterial(maps.mid, {
-      transmission: 0.32,
-      thickness: 0.48,
-      roughness: 0.42,
-      metalness: 0.01,
-      opacity: 0.98,
-      emissive: 0x5a0c20
-    }, usePhysical),
-    outer: createPetalMaterial(maps.outer, {
-      transmission: 0.62,
-      thickness: 0.32,
-      roughness: 0.24,
-      metalness: 0,
-      opacity: 0.82,
-      emissive: 0x4a0818
-    }, usePhysical)
+    inner: createPetalMaterial(maps.inner, { transmission: 0.08, thickness: 0.42, roughness: 0.52, opacity: 1 }, usePhysical),
+    mid: createPetalMaterial(maps.mid, { transmission: 0.22, thickness: 0.36, roughness: 0.38, opacity: 0.98 }, usePhysical),
+    outer: createPetalMaterial(maps.outer, { transmission: 0.38, thickness: 0.28, roughness: 0.28, opacity: 0.92 }, usePhysical)
   };
 
-  const layers = quality.lowPoly
-    ? [
-        { count: 7, kind: "inner", radius: 0.03 },
-        { count: 9, kind: "mid", radius: 0.065 },
-        { count: 11, kind: "mid", radius: 0.095 },
-        { count: 12, kind: "outer", radius: 0.125 },
-        { count: 10, kind: "outer", radius: 0.155 }
-      ]
-    : [
-        { count: 10, kind: "inner", radius: 0.018 },
-        { count: 10, kind: "inner", radius: 0.038 },
-        { count: 12, kind: "mid", radius: 0.055 },
-        { count: 12, kind: "mid", radius: 0.072 },
-        { count: 14, kind: "mid", radius: 0.092 },
-        { count: 14, kind: "outer", radius: 0.112 },
-        { count: 12, kind: "outer", radius: 0.132 },
-        { count: 10, kind: "outer", radius: 0.152 }
-      ];
-
   const petals = [];
-  let petalIndex = 0;
-  const layerCount = layers.length;
+  for (let i = 0; i < totalPetals; i++) {
+    const t = i / (totalPetals - 1);
+    const kind = t < 0.28 ? "inner" : t < 0.58 ? "mid" : "outer";
+    const yaw = i * GOLDEN * 2.35 + (rand() - 0.5) * 0.08;
+    const pivot = new THREE.Group();
+    pivot.rotation.y = yaw;
+    blossom.add(pivot);
 
-  layers.forEach((layer, layerIndex) => {
-    const t = layerIndex / (layerCount - 1);
-    for (let i = 0; i < layer.count; i++) {
-      const yaw = (i / layer.count) * Math.PI * 2 + layerIndex * 0.31 + (rand() - 0.5) * 0.14;
-      const pivot = new THREE.Group();
-      pivot.rotation.y = yaw;
-      blossom.add(pivot);
+    const mesh = new THREE.Mesh(geometries[kind], materials[kind]);
+    pivot.add(mesh);
 
-      const mesh = new THREE.Mesh(geometries[layer.kind], materials[layer.kind]);
-      pivot.add(mesh);
+    const layerT = t;
+    const closedPitch = -0.52 + layerT * 0.08;
+    const openPitch = 0.18 + layerT * 0.62 + (kind === "outer" ? 0.18 : 0);
+    const closedScale = 0.28 + layerT * 0.06;
+    const openScale = (kind === "inner" ? 0.68 : kind === "mid" ? 0.88 : 1.02) * (0.92 + rand() * 0.1);
+    const openRadius = 0.008 + layerT * layerT * 0.14;
+    const delay = layerT * 0.62 + rand() * 0.02;
+    const span = 0.22 + (1 - layerT) * 0.24;
 
-      const closedPitch = -0.44 + t * 0.1 + (rand() - 0.5) * 0.05;
-      const openPitch = 0.32 + t * 0.78 + (rand() - 0.5) * 0.06;
-      const closedScale = 0.32 + t * 0.04;
-      const openScale =
-        (layer.kind === "inner" ? 0.76 : layer.kind === "mid" ? 0.98 : 1.18) * (0.9 + rand() * 0.16);
-      const closedWidth = 0.46 + t * 0.08;
-      const openWidth = 1;
-      const delay = t * 0.56 + rand() * 0.025;
-      const span = 0.26 + (1 - t) * 0.22;
+    petals.push({
+      mesh,
+      pivot,
+      closedPitch,
+      openPitch,
+      closedRoll: (rand() - 0.5) * 0.1,
+      openRoll: (rand() - 0.5) * 0.16,
+      closedScale,
+      openScale,
+      closedWidth: 0.42 + layerT * 0.08,
+      openWidth: 1,
+      closedRadius: 0.002,
+      openRadius,
+      delay,
+      span,
+      phase: rand() * Math.PI * 2,
+      tilt: (rand() - 0.5) * 0.08
+    });
+  }
 
-      petals.push({
-        mesh,
-        pivot,
-        kind: layer.kind,
-        closedPitch,
-        openPitch,
-        closedRoll: (rand() - 0.5) * 0.14,
-        openRoll: (rand() - 0.5) * 0.24,
-        closedScale,
-        openScale,
-        closedWidth,
-        openWidth,
-        closedRadius: 0.004,
-        openRadius: layer.radius + t * 0.055,
-        delay,
-        span,
-        phase: rand() * Math.PI * 2,
-        index: petalIndex++
-      });
-    }
-  });
-
-  const stamenGroup = new THREE.Group();
-  blossom.add(stamenGroup);
-
-  const coreGlow = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12, 24, 24),
-    new THREE.MeshBasicMaterial({
-      color: 0xffc860,
-      transparent: true,
-      opacity: 0.55,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
+  const budCore = new THREE.Mesh(
+    new THREE.SphereGeometry(0.08, 20, 20),
+    new THREE.MeshPhysicalMaterial({
+      color: 0xf8c0cc,
+      roughness: 0.45,
+      emissive: 0xe88898,
+      emissiveIntensity: 0.18
     })
   );
-  coreGlow.position.y = 0.08;
-  stamenGroup.add(coreGlow);
-
-  const stamenMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0xffe090,
-    roughness: 0.18,
-    metalness: 0.35,
-    emissive: 0xffa820,
-    emissiveIntensity: 1.2,
-    clearcoat: 0.65,
-    clearcoatRoughness: 0.18
-  });
-  const filamentMaterial = new THREE.MeshStandardMaterial({
-    color: 0xf0b8c4,
-    roughness: 0.42,
-    emissive: 0x401018,
-    emissiveIntensity: 0.08
-  });
-
-  for (let i = 0; i < stamenCount; i++) {
-    const filament = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.008, 1, 5), filamentMaterial);
-    const anther = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 8), stamenMaterial);
-    const pivot = new THREE.Group();
-    const yaw = i * GOLDEN;
-    const tilt = 0.1 + (i % 7) * 0.028;
-    pivot.rotation.set(tilt, yaw, 0);
-    filament.position.y = 0.22;
-    anther.position.y = 0.44;
-    pivot.add(filament, anther);
-    stamenGroup.add(pivot);
-  }
+  budCore.position.y = 0.04;
+  blossom.add(budCore);
 
   const stemCurve = new THREE.CatmullRomCurve3(
     quality.compactStem
@@ -285,63 +185,26 @@ export function createBloomingFlower(quality = {}) {
         ]
       : [
           new THREE.Vector3(0, 0.02, 0),
-          new THREE.Vector3(-0.06, -0.55, 0.05),
-          new THREE.Vector3(0.1, -1.25, -0.03),
-          new THREE.Vector3(0.02, -2.15, 0.06)
+          new THREE.Vector3(-0.05, -0.5, 0.04),
+          new THREE.Vector3(0.08, -1.1, -0.02)
         ]
   );
   const stem = new THREE.Mesh(
-    new THREE.TubeGeometry(stemCurve, quality.compactStem ? 28 : 48, 0.026, 10, false),
-    new THREE.MeshStandardMaterial({
-      color: 0x1e3828,
-      roughness: 0.68,
-      metalness: 0.04,
-      emissive: 0x081810,
-      emissiveIntensity: 0.12
-    })
+    new THREE.TubeGeometry(stemCurve, quality.compactStem ? 28 : 40, 0.022, 8, false),
+    new THREE.MeshStandardMaterial({ color: 0x1a3424, roughness: 0.72, emissive: 0x061008, emissiveIntensity: 0.08 })
   );
   group.add(stem);
 
-  const sepalMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x284830,
-    roughness: 0.62,
-    side: THREE.DoubleSide,
-    emissive: 0x081810,
-    emissiveIntensity: 0.08
-  });
-  const sepalGeometry = createPetalGeometry({ width: 0.22, length: 0.38, curl: 0.08, ruffle: 0.02, segmentsW: 12, segmentsL: 16 });
+  const sepalGeo = createRosePetalGeometry({ width: 0.16, length: 0.28, cup: 0.06, tipCurl: 0.04, segmentsW: 10, segmentsL: 12 });
+  const sepalMat = new THREE.MeshPhysicalMaterial({ color: 0x2a5038, roughness: 0.65, side: THREE.DoubleSide });
   for (let i = 0; i < 5; i++) {
     const pivot = new THREE.Group();
     pivot.rotation.y = (i / 5) * Math.PI * 2;
-    const sepal = new THREE.Mesh(sepalGeometry, sepalMaterial);
-    sepal.rotation.x = -1.05;
-    sepal.position.z = 0.04;
+    const sepal = new THREE.Mesh(sepalGeo, sepalMat);
+    sepal.rotation.x = -1.1;
+    sepal.position.z = 0.03;
     pivot.add(sepal);
     blossom.add(pivot);
-  }
-
-  if (!quality.compactStem) {
-    const leafMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x2a4830,
-      roughness: 0.58,
-      side: THREE.DoubleSide,
-      sheen: 0.25,
-      sheenColor: new THREE.Color(0x709878)
-    });
-    const leafGeometry = createLeafGeometry();
-    for (const leaf of [
-      { y: -0.72, yaw: 0.8, roll: -0.4, pitch: 0.9, scale: 1 },
-      { y: -1.05, yaw: -2.2, roll: 0.35, pitch: 1.05, scale: 0.82 }
-    ]) {
-      const pivot = new THREE.Group();
-      pivot.position.y = leaf.y;
-      pivot.rotation.y = leaf.yaw;
-      const mesh = new THREE.Mesh(leafGeometry, leafMaterial);
-      mesh.rotation.set(leaf.pitch, 0, leaf.roll);
-      mesh.scale.setScalar(leaf.scale);
-      pivot.add(mesh);
-      group.add(pivot);
-    }
   }
 
   const sparkleTexture = createSoftParticleTexture();
@@ -349,39 +212,24 @@ export function createBloomingFlower(quality = {}) {
   const sparkleSeeds = new Float32Array(sparkleCount * 3);
   for (let i = 0; i < sparkleCount; i++) {
     sparkleSeeds[i * 3] = rand() * Math.PI * 2;
-    sparkleSeeds[i * 3 + 1] = 0.4 + rand() * 1.6;
+    sparkleSeeds[i * 3 + 1] = 0.4 + rand() * 1.4;
     sparkleSeeds[i * 3 + 2] = 0.15 + rand() * 0.85;
   }
   const sparkles = new THREE.Points(
     new THREE.BufferGeometry(),
     new THREE.PointsMaterial({
       map: sparkleTexture,
-      color: 0xffd0dc,
-      size: quality.compactStem ? 0.048 : 0.062,
+      color: 0xffeef2,
+      size: quality.compactStem ? 0.035 : 0.048,
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
-      opacity: 0.85,
+      opacity: 0.55,
       sizeAttenuation: true
     })
   );
   sparkles.geometry.setAttribute("position", new THREE.BufferAttribute(sparklePositions, 3));
   group.add(sparkles);
-
-  const glowRing = new THREE.Mesh(
-    new THREE.RingGeometry(0.16, 0.82, 72),
-    new THREE.MeshBasicMaterial({
-      color: 0xff7088,
-      transparent: true,
-      opacity: 0.1,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      side: THREE.DoubleSide
-    })
-  );
-  glowRing.rotation.x = -Math.PI / 2;
-  glowRing.position.y = quality.compactStem ? -0.42 : -0.08;
-  group.add(glowRing);
 
   const petalMaterials = [materials.inner, materials.mid, materials.outer];
 
@@ -390,35 +238,26 @@ export function createBloomingFlower(quality = {}) {
     for (const petal of petals) {
       const local = easeInOutCubic(smoothstep(petal.delay, petal.delay + petal.span, p));
       petal.mesh.rotation.x = THREE.MathUtils.lerp(petal.closedPitch, petal.openPitch, local);
-      petal.mesh.rotation.z = THREE.MathUtils.lerp(petal.closedRoll, petal.openRoll, local);
+      petal.mesh.rotation.z = THREE.MathUtils.lerp(petal.closedRoll, petal.openRoll, local) + petal.tilt * local;
       const scale = THREE.MathUtils.lerp(petal.closedScale, petal.openScale, local);
       const width = THREE.MathUtils.lerp(petal.closedWidth, petal.openWidth, local);
       petal.mesh.scale.set(width, scale, scale);
       petal.mesh.position.z = THREE.MathUtils.lerp(petal.closedRadius, petal.openRadius, local);
-      petal.mesh.position.y = THREE.MathUtils.lerp(0.0, 0.02, local);
+      petal.mesh.position.y = THREE.MathUtils.lerp(0, 0.015, local);
     }
-
-    const stamenShow = smoothstep(0.28, 0.78, p);
-    stamenGroup.scale.setScalar(0.12 + stamenShow * 0.88);
-    stamenGroup.position.y = THREE.MathUtils.lerp(-0.05, 0.08, stamenShow);
-    coreGlow.material.opacity = 0.08 + stamenShow * 0.62;
-    coreGlow.scale.setScalar(0.6 + stamenShow * 1.1);
-    sparkles.material.opacity = 0.05 + p * 0.88;
-    glowRing.material.opacity = 0.03 + p * 0.18;
-    glowRing.scale.setScalar(0.7 + p * 0.65);
+    budCore.scale.setScalar(0.5 + smoothstep(0.2, 0.7, p) * 0.55);
+    sparkles.material.opacity = 0.04 + p * 0.42;
   }
 
   function updatePremiumEffects(time, progress) {
     const p = THREE.MathUtils.clamp(progress, 0, 1);
-    const pulse = 0.5 + Math.sin(time * 1.4) * 0.5;
-    const bloomGlow = 0.35 + p * 0.85 + pulse * p * 0.18;
+    const pulse = 0.5 + Math.sin(time * 1.2) * 0.5;
+    const bloomGlow = 0.06 + p * 0.16 + pulse * p * 0.03;
     for (const material of petalMaterials) {
-      const edgeFactor = material.transmission > 0.45 ? 0.95 : material.transmission > 0.2 ? 0.78 : 0.62;
+      const edgeFactor = material.transmission > 0.3 ? 0.55 : 0.4;
       material.emissiveIntensity = bloomGlow * edgeFactor;
     }
-    stamenMaterial.emissiveIntensity = 0.55 + p * 1.35 + pulse * 0.15;
-    coreGlow.material.opacity = (0.1 + p * 0.55) * (0.85 + pulse * 0.25);
-    glowRing.rotation.z = time * 0.06;
+    budCore.material.emissiveIntensity = 0.06 + p * 0.08;
   }
 
   function updateSparkles(time, progress) {
@@ -427,31 +266,28 @@ export function createBloomingFlower(quality = {}) {
     for (let i = 0; i < sparkleCount; i++) {
       const seed = sparkleSeeds[i * 3];
       const speed = sparkleSeeds[i * 3 + 1];
-      const radius = 0.08 + sparkleSeeds[i * 3 + 2] * (0.14 + open * 1.15);
-      const rising = (time * 0.06 * speed + seed) % 1;
-      const y = 0.06 + rising * (0.32 + open * 1.35);
-      const angle = seed + time * 0.1 * speed;
-      const wobble = Math.sin(time * speed + seed) * 0.06;
-      positions[i * 3] = Math.cos(angle) * (radius + wobble);
+      const radius = 0.06 + sparkleSeeds[i * 3 + 2] * (0.1 + open * 0.75);
+      const rising = (time * 0.05 * speed + seed) % 1;
+      const y = 0.04 + rising * (0.22 + open * 0.85);
+      const angle = seed + time * 0.08 * speed;
+      positions[i * 3] = Math.cos(angle) * radius;
       positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = Math.sin(angle) * (radius + wobble * 0.7);
+      positions[i * 3 + 2] = Math.sin(angle) * radius;
     }
     sparkles.geometry.attributes.position.needsUpdate = true;
   }
 
-  function updateIdle(time, progress) {
+  function updateIdle(time, progress, wind = 0) {
     if (progress < 0.98) return;
     for (const petal of petals) {
-      petal.mesh.rotation.z += Math.sin(time * 0.65 + petal.phase) * 0.0004;
+      petal.mesh.rotation.z += Math.sin(time * 0.55 + petal.phase) * 0.00025 * (1 + wind);
     }
-    blossom.rotation.y = Math.sin(time * 0.1) * 0.035;
+    blossom.rotation.z = Math.sin(time * 0.08) * 0.012 * wind;
   }
 
   function updatePetBreathing(time) {
-    const breath = 1 + Math.sin(time * 0.55) * 0.018 + Math.sin(time * 1.3) * 0.006;
+    const breath = 1 + Math.sin(time * 0.5) * 0.012;
     blossom.scale.setScalar(breath);
-    glowRing.rotation.z = time * 0.12;
-    glowRing.material.opacity = 0.14 + Math.sin(time * 0.8) * 0.03;
   }
 
   setBloom(0);
@@ -459,8 +295,6 @@ export function createBloomingFlower(quality = {}) {
   return {
     group,
     blossom,
-    coreGlow,
-    stamenMaterial,
     setBloom,
     updateSparkles,
     updateIdle,

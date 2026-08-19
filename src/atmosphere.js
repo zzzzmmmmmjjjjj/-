@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { createFloatingPetalTexture, createGoldParticleTexture, createSoftParticleTexture } from "./textures.js";
+import { createFloatingPetalTexture, createSoftParticleTexture } from "./textures.js";
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -15,116 +15,141 @@ function mulberry32(seed) {
 export function createAtmosphere(quality = {}) {
   const group = new THREE.Group();
   const rand = mulberry32(880819);
-  const petalCount = quality.floatingPetals ?? 24;
-  const goldCount = quality.goldDustCount ?? 120;
+  const petalCount = quality.floatingPetals ?? 28;
+  const dustCount = quality.goldDustCount ?? 80;
 
   const petalTexture = createFloatingPetalTexture(quality.isMobile ? 128 : 256);
-  const petalMaterial = new THREE.MeshBasicMaterial({
-    map: petalTexture,
-    transparent: true,
-    opacity: 0.42,
-    depthWrite: false,
-    blending: THREE.NormalBlending,
-    side: THREE.DoubleSide
-  });
-
   const floatingPetals = [];
+
   for (let i = 0; i < petalCount; i++) {
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.22 + rand() * 0.18, 0.28 + rand() * 0.2), petalMaterial.clone());
-    mesh.material.opacity = 0.12 + rand() * 0.28;
-    mesh.position.set((rand() - 0.5) * 8, rand() * 4 - 1.5, -2.2 - rand() * 4.5);
-    mesh.rotation.set(rand() * Math.PI, rand() * Math.PI, rand() * Math.PI);
+    const w = 0.14 + rand() * 0.16;
+    const h = 0.18 + rand() * 0.2;
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(w, h),
+      new THREE.MeshBasicMaterial({
+        map: petalTexture,
+        transparent: true,
+        opacity: 0.18 + rand() * 0.32,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      })
+    );
+    const side = rand() > 0.5 ? 1 : -1;
+    mesh.position.set(
+      (rand() - 0.5) * 10,
+      rand() * 3 - 0.5,
+      -1.5 - rand() * 4
+    );
+    mesh.rotation.set(rand() * 0.8, rand() * Math.PI, rand() * 0.6);
     group.add(mesh);
     floatingPetals.push({
       mesh,
-      speed: 0.08 + rand() * 0.16,
-      spin: (rand() - 0.5) * 0.4,
-      drift: (rand() - 0.5) * 0.25,
+      side,
+      speedY: 0.04 + rand() * 0.08,
+      speedX: (0.06 + rand() * 0.14) * side,
+      spinX: (rand() - 0.5) * 0.5,
+      spinY: (rand() - 0.5) * 0.35,
+      spinZ: (rand() - 0.5) * 0.6,
       phase: rand() * Math.PI * 2,
       baseOpacity: mesh.material.opacity,
-      resetY: -2.2 - rand() * 1.5,
-      resetX: (rand() - 0.5) * 8
+      resetX: -6 - rand() * 2,
+      resetY: rand() * 3 - 0.2
     });
   }
 
-  const goldPositions = new Float32Array(goldCount * 3);
-  const goldSeeds = new Float32Array(goldCount * 4);
-  for (let i = 0; i < goldCount; i++) {
-    goldSeeds[i * 4] = rand() * Math.PI * 2;
-    goldSeeds[i * 4 + 1] = 0.5 + rand() * 1.4;
-    goldSeeds[i * 4 + 2] = rand();
-    goldSeeds[i * 4 + 3] = 0.4 + rand() * 0.6;
+  const dustPositions = new Float32Array(dustCount * 3);
+  const dustSeeds = new Float32Array(dustCount * 4);
+  for (let i = 0; i < dustCount; i++) {
+    dustSeeds[i * 4] = rand() * Math.PI * 2;
+    dustSeeds[i * 4 + 1] = 0.4 + rand() * 1.2;
+    dustSeeds[i * 4 + 2] = (rand() - 0.5) * 8;
+    dustSeeds[i * 4 + 3] = rand();
   }
 
-  const goldDust = new THREE.Points(
+  const dust = new THREE.Points(
     new THREE.BufferGeometry(),
     new THREE.PointsMaterial({
-      map: createGoldParticleTexture(),
-      color: 0xffd080,
-      size: quality.isMobile ? 0.035 : 0.05,
+      map: createSoftParticleTexture(),
+      color: 0xffe8ee,
+      size: quality.isMobile ? 0.028 : 0.038,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.45,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       sizeAttenuation: true
     })
   );
-  goldDust.geometry.setAttribute("position", new THREE.BufferAttribute(goldPositions, 3));
-  group.add(goldDust);
+  dust.geometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
+  group.add(dust);
 
-  const bokehCount = quality.bokehCount ?? 18;
-  const bokehs = [];
-  const bokehMaterial = new THREE.MeshBasicMaterial({
-    color: 0xff8090,
-    transparent: true,
-    opacity: 0.06,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-  });
-  for (let i = 0; i < bokehCount; i++) {
-    const size = 0.15 + rand() * 0.55;
-    const mesh = new THREE.Mesh(new THREE.CircleGeometry(size, 24), bokehMaterial.clone());
-    mesh.material.opacity = 0.03 + rand() * 0.08;
-    mesh.position.set((rand() - 0.5) * 10, (rand() - 0.5) * 6, -3.5 - rand() * 5);
+  const streakCount = quality.isMobile ? 4 : 8;
+  const streaks = [];
+  for (let i = 0; i < streakCount; i++) {
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.4 + rand() * 2, 0.015 + rand() * 0.02),
+      new THREE.MeshBasicMaterial({
+        color: 0xffdce6,
+        transparent: true,
+        opacity: 0.04 + rand() * 0.05,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      })
+    );
+    mesh.position.set((rand() - 0.5) * 8, rand() * 2.5, -2.5 - rand() * 3);
+    mesh.rotation.z = (rand() - 0.5) * 0.12;
     group.add(mesh);
-    bokehs.push({ mesh, phase: rand() * Math.PI * 2, speed: 0.15 + rand() * 0.2 });
+    streaks.push({ mesh, speed: 0.12 + rand() * 0.18, phase: rand() * Math.PI * 2 });
   }
+
+  let windStrength = 0;
 
   function update(time, progress) {
     const open = THREE.MathUtils.clamp(progress, 0, 1);
+    const gust = Math.pow(Math.max(0, Math.sin(time * 0.22 - 0.4)), 3);
+    const gust2 = Math.pow(Math.max(0, Math.sin(time * 0.15 + 1.2)), 4);
+    windStrength = 0.25 + gust * 0.85 + gust2 * 0.55;
+    const windX = 1;
+    const lift = windStrength * 0.004;
+
     for (const petal of floatingPetals) {
-      const { mesh, speed, spin, drift, phase, baseOpacity } = petal;
-      mesh.position.y += speed * 0.012;
-      mesh.position.x += Math.sin(time * 0.4 + phase) * drift * 0.008;
-      mesh.rotation.z += spin * 0.004;
-      mesh.rotation.y += spin * 0.002;
-      if (mesh.position.y > 3.2) {
-        mesh.position.y = petal.resetY;
+      const { mesh, speedY, speedX, spinX, spinY, spinZ, phase, baseOpacity } = petal;
+      mesh.position.x += speedX * windStrength * 0.016 + Math.sin(time * 0.35 + phase) * 0.003 * windStrength;
+      mesh.position.y += speedY * 0.008 + lift * Math.sin(time * 0.5 + phase);
+      mesh.position.z += Math.sin(time * 0.2 + phase) * 0.001;
+      mesh.rotation.x += spinX * 0.006 * (0.4 + windStrength);
+      mesh.rotation.y += spinY * 0.005 * windStrength;
+      mesh.rotation.z += spinZ * 0.008 * (0.5 + windStrength);
+
+      if (mesh.position.x > 6) {
         mesh.position.x = petal.resetX;
+        mesh.position.y = petal.resetY;
+      } else if (mesh.position.x < -6) {
+        mesh.position.x = -petal.resetX;
+        mesh.position.y = petal.resetY;
       }
-      mesh.material.opacity = baseOpacity * (0.35 + open * 0.85);
+      if (mesh.position.y > 3.5) mesh.position.y = -1.2 - petal.phase * 0.01;
+      mesh.material.opacity = baseOpacity * (0.45 + open * 0.65) * (0.7 + windStrength * 0.35);
     }
 
-    const positions = goldDust.geometry.attributes.position.array;
-    for (let i = 0; i < goldCount; i++) {
-      const seed = goldSeeds[i * 4];
-      const speed = goldSeeds[i * 4 + 1];
-      const radius = 0.8 + goldSeeds[i * 4 + 2] * 2.4;
-      const height = goldSeeds[i * 4 + 3];
-      const angle = seed + time * 0.08 * speed;
-      const y = Math.sin(time * 0.15 * speed + seed) * 1.2 + height * 1.8;
-      positions[i * 3] = Math.cos(angle) * radius;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = -1.8 - goldSeeds[i * 4 + 2] * 3.2 + Math.sin(angle * 2) * 0.4;
+    const positions = dust.geometry.attributes.position.array;
+    for (let i = 0; i < dustCount; i++) {
+      const seed = dustSeeds[i * 4];
+      const speed = dustSeeds[i * 4 + 1];
+      const baseX = dustSeeds[i * 4 + 2];
+      const height = dustSeeds[i * 4 + 3];
+      positions[i * 3] = baseX + Math.sin(time * 0.12 * speed + seed) * 0.4 + time * 0.04 * windStrength * windX;
+      positions[i * 3 + 1] = height * 2.2 + Math.sin(time * 0.18 * speed + seed) * 0.6;
+      positions[i * 3 + 2] = -1.2 - dustSeeds[i * 4 + 3] * 2.8;
     }
-    goldDust.geometry.attributes.position.needsUpdate = true;
-    goldDust.material.opacity = 0.18 + open * 0.62;
+    dust.geometry.attributes.position.needsUpdate = true;
+    dust.material.opacity = 0.12 + open * 0.28 + windStrength * 0.08;
 
-    for (const bokeh of bokehs) {
-      bokeh.mesh.material.opacity = (0.035 + open * 0.07) * (0.45 + Math.sin(time * bokeh.speed + bokeh.phase) * 0.55);
-      bokeh.mesh.scale.setScalar(0.9 + Math.sin(time * 0.3 + bokeh.phase) * 0.08);
+    for (const streak of streaks) {
+      streak.mesh.position.x += streak.speed * windStrength * 0.05;
+      streak.mesh.material.opacity = (0.03 + open * 0.04) * (0.4 + windStrength * 0.75);
+      if (streak.mesh.position.x > 7) streak.mesh.position.x = -7;
     }
   }
 
-  return { group, update };
+  return { group, update, getWindStrength: () => windStrength };
 }
