@@ -1,12 +1,17 @@
 import "./style.css";
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { createBloomingFlower } from "./bloomingFlower.js";
+
+const BLOOM_DURATION = 11;
 
 const canvas = document.querySelector("#scene");
 const loading = document.querySelector(".loading");
-const loadingText = document.querySelector(".loading p");
 const bloomButton = document.querySelector(".bloom");
 const bloomLabel = document.querySelector(".bloom-label");
 const musicButton = document.querySelector(".music");
@@ -14,42 +19,95 @@ const music = document.querySelector("#background-music");
 const assetUrl = (fileName) => `${import.meta.env.BASE_URL}${fileName}`;
 
 music.src = assetUrl("the-rose.mp3");
+music.volume = 0.42;
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x090406, 0.07);
+scene.fog = new THREE.FogExp2(0x090406, 0.045);
+scene.background = new THREE.Color(0x090406);
 
-const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 100);
-camera.position.set(0, 0.1, 7.2);
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 80);
+camera.position.set(1.35, 0.42, 5.6);
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true,
+  alpha: true,
+  powerPreference: "high-performance"
+});
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.32;
 
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.enablePan = false;
-controls.enableRotate = true;
-controls.minDistance = 4.2;
-controls.maxDistance = 10;
-controls.autoRotate = true;
-controls.autoRotateSpeed = 12;
+controls.minDistance = 3.6;
+controls.maxDistance = 9;
+controls.autoRotate = false;
+controls.target.set(0.85, 0.05, 0);
 
-const rose = new THREE.Group();
-scene.add(rose);
-applyResponsiveLayout();
+const keyLight = new THREE.DirectionalLight(0xffe4ec, 2.1);
+keyLight.position.set(3.4, 4.2, 3.8);
+scene.add(keyLight);
 
-let particleCloud;
-let bloomAmount = 0;
-let isBlooming = false;
+const rimLight = new THREE.DirectionalLight(0xffc1d0, 2.6);
+rimLight.position.set(-3.8, 1.6, -4.4);
+scene.add(rimLight);
+
+const fillLight = new THREE.PointLight(0xff8aa0, 6.5, 12, 2);
+fillLight.position.set(0.4, 0.8, 2.4);
+scene.add(fillLight);
+
+const hemi = new THREE.HemisphereLight(0xffdce4, 0x12080b, 0.55);
+scene.add(hemi);
+
+const flowerRoot = new THREE.Group();
+scene.add(flowerRoot);
+const flower = createBloomingFlower();
+flowerRoot.add(flower.group);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.38, 0.52, 0.82);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
+
 const clock = new THREE.Clock();
+let bloomElapsed = 0;
+let isPlayingBloom = true;
+
+function applyResponsiveLayout() {
+  if (innerWidth < 700) {
+    flowerRoot.position.set(0.08, -0.18, 0);
+    flowerRoot.scale.setScalar(0.78);
+    camera.position.set(0.2, 0.35, 5.4);
+    controls.target.set(0.08, 0.05, 0);
+  } else {
+    flowerRoot.position.set(0.95, -0.05, 0);
+    flowerRoot.scale.setScalar(1);
+    camera.position.set(1.35, 0.42, 5.6);
+    controls.target.set(0.85, 0.05, 0);
+  }
+  flowerRoot.rotation.set(-0.08, 0.55, -0.16);
+  controls.update();
+}
+
+function replayBloom() {
+  bloomElapsed = 0;
+  isPlayingBloom = true;
+  bloomLabel.textContent = "开放中";
+  flower.setBloom(0);
+}
 
 bloomButton.addEventListener("click", () => {
-  isBlooming = !isBlooming;
-  bloomLabel.textContent = isBlooming ? "归拢" : "绽放";
+  replayBloom();
 });
-
-music.volume = 0.42;
 
 function updateMusicUI(isPlaying) {
   musicButton.classList.toggle("playing", isPlaying);
@@ -74,194 +132,48 @@ musicButton.addEventListener("click", async () => {
   }
 });
 
-// 有声自动播放若被浏览器拦截，则在第一次用户交互时启动。
 playMusic();
 addEventListener("pointerdown", (event) => {
   if (!event.target.closest?.(".music") && music.paused) playMusic();
 }, { once: true });
 
-new GLTFLoader().load(
-  assetUrl("rose-model.glb"),
-  buildParticlesFromModel,
-  (event) => {
-    if (!event.total) return;
-    const progress = THREE.MathUtils.clamp(
-      Math.round(event.loaded / event.total * 100),
-      0,
-      100
-    );
-    loadingText.textContent = `正在采样玫瑰 ${progress}%`;
-  },
-  (error) => {
-    console.error(error);
-    loadingText.textContent = "三维玫瑰加载失败";
-  }
-);
-
-function buildParticlesFromModel(gltf) {
-  const model = gltf.scene;
-  model.updateMatrixWorld(true);
-
-  const bounds = new THREE.Box3().setFromObject(model);
-  const center = bounds.getCenter(new THREE.Vector3());
-  const size = bounds.getSize(new THREE.Vector3());
-  const largestDimension = Math.max(size.x, size.y, size.z);
-  const modelScale = 4.2 / largestDimension;
-
-  const entries = [];
-  let totalWeight = 0;
-
-  model.traverse((object) => {
-    if (!object.isMesh || !object.geometry?.attributes?.position) return;
-    const sampler = new MeshSurfaceSampler(object).build();
-    const weight = Math.max(1, object.geometry.attributes.position.count);
-    totalWeight += weight;
-    entries.push({
-      mesh: object,
-      sampler,
-      weight,
-      cumulativeWeight: totalWeight,
-      materialColor: object.material?.color?.clone() ?? new THREE.Color(0xc53d58)
-    });
-  });
-
-  if (!entries.length) throw new Error("GLB 中没有可采样网格");
-
-  const count = innerWidth < 700 ? 52000 : 105000;
-  const positions = new Float32Array(count * 3);
-  const origins = new Float32Array(count * 3);
-  const colors = new Float32Array(count * 3);
-  const seeds = new Float32Array(count * 4);
-  const point = new THREE.Vector3();
-  const normal = new THREE.Vector3();
-  const color = new THREE.Color();
-
-  for (let i = 0; i < count; i++) {
-    const entry = chooseWeightedEntry(entries, totalWeight);
-    entry.sampler.sample(point, normal);
-    point.applyMatrix4(entry.mesh.matrixWorld);
-    point.sub(center).multiplyScalar(modelScale);
-
-    // Pixabay 模型的花冠朝向 Z 轴；稍作倾斜，让初始画面同时看到花心和侧面层次。
-    const sourceY = point.y;
-    point.y = point.z;
-    point.z = -sourceY;
-
-    const j = i * 3;
-    const k = i * 4;
-    positions[j] = origins[j] = point.x;
-    positions[j + 1] = origins[j + 1] = point.y;
-    positions[j + 2] = origins[j + 2] = point.z;
-
-    const depthLight = THREE.MathUtils.clamp((point.z + 2.1) / 4.2, 0, 1);
-    color.setHSL(
-      0.965 + Math.random() * 0.025,
-      0.58 + Math.random() * 0.2,
-      0.38 + depthLight * 0.25 + Math.random() * 0.14
-    );
-    colors[j] = color.r;
-    colors[j + 1] = color.g;
-    colors[j + 2] = color.b;
-
-    seeds[k] = Math.random() * Math.PI * 2;
-    seeds[k + 1] = 0.006 + Math.random() * 0.018;
-    seeds[k + 2] = 0.4 + Math.random() * 1.2;
-    seeds[k + 3] = 0.35 + Math.random() * 1.1;
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  const material = new THREE.PointsMaterial({
-    size: innerWidth < 700 ? 0.022 : 0.018,
-    sizeAttenuation: true,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.94,
-    depthWrite: false,
-    blending: THREE.NormalBlending
-  });
-
-  particleCloud = {
-    points: new THREE.Points(geometry, material),
-    origins,
-    seeds,
-    count
-  };
-  particleCloud.points.rotation.x = -0.2;
-  particleCloud.points.rotation.z = -0.08;
-  rose.add(particleCloud.points);
-  loading.classList.add("hidden");
-}
-
-function chooseWeightedEntry(entries, totalWeight) {
-  const target = Math.random() * totalWeight;
-  for (const entry of entries) {
-    if (target <= entry.cumulativeWeight) return entry;
-  }
-  return entries.at(-1);
-}
-
-function updateParticles(time) {
-  if (!particleCloud) return;
-  const attribute = particleCloud.points.geometry.attributes.position;
-  const values = attribute.array;
-  bloomAmount += ((isBlooming ? 1 : 0) - bloomAmount) * 0.025;
-
-  for (let i = 0; i < particleCloud.count; i++) {
-    const j = i * 3;
-    const k = i * 4;
-    const phase = particleCloud.seeds[k];
-    const drift = particleCloud.seeds[k + 1];
-    const wave = Math.sin(time * particleCloud.seeds[k + 2] + phase);
-    const distance = Math.hypot(
-      particleCloud.origins[j],
-      particleCloud.origins[j + 1],
-      particleCloud.origins[j + 2]
-    ) || 1;
-    const scatter = bloomAmount * particleCloud.seeds[k + 3] * 0.3;
-    const tx = particleCloud.origins[j] + wave * drift + particleCloud.origins[j] / distance * scatter;
-    const ty = particleCloud.origins[j + 1] + Math.cos(time + phase) * drift + particleCloud.origins[j + 1] / distance * scatter;
-    const tz = particleCloud.origins[j + 2] + wave * drift + particleCloud.origins[j + 2] / distance * scatter;
-    values[j] += (tx - values[j]) * 0.065;
-    values[j + 1] += (ty - values[j + 1]) * 0.065;
-    values[j + 2] += (tz - values[j + 2]) * 0.065;
-  }
-  attribute.needsUpdate = true;
-}
-
 function animate() {
   requestAnimationFrame(animate);
-  const deltaTime = clock.getDelta();
+  const delta = clock.getDelta();
   const time = clock.elapsedTime;
-  updateParticles(time);
-  rose.position.y = rose.userData.baseY + Math.sin(time * 0.5) * 0.025;
-  controls.update(deltaTime);
-  renderer.render(scene, camera);
+
+  if (isPlayingBloom) {
+    bloomElapsed += delta;
+    const progress = Math.min(bloomElapsed / BLOOM_DURATION, 1);
+    flower.setBloom(progress);
+    if (progress >= 1) {
+      isPlayingBloom = false;
+      bloomLabel.textContent = "再开放一次";
+    }
+  }
+
+  const progress = Math.min(bloomElapsed / BLOOM_DURATION, 1);
+  flower.updateSparkles(time, progress);
+  flower.updateIdle(time, progress);
+  flowerRoot.position.y = flowerRoot.userData.baseY + Math.sin(time * 0.45) * 0.02;
+  controls.update(delta);
+  composer.render();
 }
 
-function applyResponsiveLayout() {
-  if (innerWidth < 700) {
-    rose.position.x = 0.12;
-    rose.userData.baseY = -0.42;
-    rose.scale.setScalar(0.61);
-  } else {
-    rose.position.x = 1.08;
-    rose.userData.baseY = 0;
-    rose.scale.setScalar(0.82);
-  }
-  rose.position.y = rose.userData.baseY;
-  camera.position.x = rose.position.x;
-  controls.target.set(rose.position.x, rose.userData.baseY, 0);
-  controls.update();
-}
+applyResponsiveLayout();
+flowerRoot.userData.baseY = flowerRoot.position.y;
+bloomLabel.textContent = "开放中";
+loading.classList.add("hidden");
 
 addEventListener("resize", () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  composer.setSize(innerWidth, innerHeight);
+  bloomPass.setSize(innerWidth, innerHeight);
   applyResponsiveLayout();
+  flowerRoot.userData.baseY = flowerRoot.position.y;
 });
 
 animate();
