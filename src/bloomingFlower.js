@@ -319,42 +319,44 @@ export function createBloomingFlower(quality = {}) {
     const innerUnfurl = smoothstep(0.22, 0.72, p);
     const outerUnfurl = smoothstep(0.5, 1, p);
     for (const petal of petals) {
-      const local = easeInOutCubic(smoothstep(petal.delay, petal.delay + petal.span, p));
-      const u = local;
+      // 拉长开合区间，让展开更“缓缓打开”，避免大开大合的僵硬感
+      const openT = smoothstep(petal.delay, petal.delay + petal.span * 1.35, p);
+      const local0 = easeInOutCubic(openT);
+      const u = Math.pow(local0, 1.12);
       const isOuter = petal.kind === "outer" || petal.kind === "guard" || petal.isHero;
 
       // 双阶段玫瑰展开：
       // - 早期：内瓣先打开（旋转/立起）
       // - 后期：外瓣再外翻并略下垂（更像玫瑰）
-      const pitchT = THREE.MathUtils.lerp(0.85, 1.05, isOuter ? outerUnfurl : innerUnfurl);
-      const rollT = THREE.MathUtils.lerp(0.85, 1.15, isOuter ? outerUnfurl : innerUnfurl);
-      const late = isOuter ? Math.pow(outerUnfurl, 1.12) : Math.pow(innerUnfurl, 1.05) * 0.6;
+      const pitchT = THREE.MathUtils.lerp(0.9, 1.0, isOuter ? outerUnfurl : innerUnfurl);
+      const rollT = THREE.MathUtils.lerp(0.9, 1.05, isOuter ? outerUnfurl : innerUnfurl);
+      const late = isOuter ? Math.pow(outerUnfurl, 1.1) : Math.pow(innerUnfurl, 1.02) * 0.45;
 
-      const twist = Math.sin(petal.phase + p * 1.6) * (isOuter ? 0.13 : 0.07) * (0.35 + 0.65 * late);
+      const twist = Math.sin(petal.phase + p * 1.6) * (isOuter ? 0.09 : 0.05) * (0.35 + 0.65 * late);
 
       petal.pivot.rotation.y = petal.baseYaw + twist;
       petal.mesh.rotation.x =
-        THREE.MathUtils.lerp(petal.closedPitch, petal.openPitch, u) + (isOuter ? 0.12 : 0.04) * late * pitchT;
+        THREE.MathUtils.lerp(petal.closedPitch, petal.openPitch, u) + (isOuter ? 0.08 : 0.03) * late * pitchT;
 
       petal.mesh.rotation.z =
-        THREE.MathUtils.lerp(petal.closedRoll, petal.openRoll, u) + petal.tilt * u + (isOuter ? 0.18 : 0.06) * late * rollT;
+        THREE.MathUtils.lerp(petal.closedRoll, petal.openRoll, u) + petal.tilt * u + (isOuter ? 0.12 : 0.045) * late * rollT;
       petal.currentRoll = petal.mesh.rotation.z;
 
-      const scale = THREE.MathUtils.lerp(petal.closedScale, petal.openScale, local);
-      const width = THREE.MathUtils.lerp(petal.closedWidth, petal.openWidth, local);
-      petal.mesh.scale.set(width, scale * (isOuter ? 1 + late * 0.06 : 1), scale * (isOuter ? 1 + late * 0.06 : 1));
+      const scale = THREE.MathUtils.lerp(petal.closedScale, petal.openScale, u);
+      const width = THREE.MathUtils.lerp(petal.closedWidth, petal.openWidth, u);
+      petal.mesh.scale.set(width, scale * (isOuter ? 1 + late * 0.05 : 1), scale * (isOuter ? 1 + late * 0.05 : 1));
 
-      const radius = THREE.MathUtils.lerp(petal.closedRadius, petal.openRadius, local);
-      petal.mesh.position.z = radius * (isOuter ? 1 + late * 0.22 : 1 + late * 0.05);
+      const radius = THREE.MathUtils.lerp(petal.closedRadius, petal.openRadius, u);
+      petal.mesh.position.z = radius * (isOuter ? 1 + late * 0.16 : 1 + late * 0.04);
 
-      const y = THREE.MathUtils.lerp(petal.closedY, petal.openY, local);
+      const y = THREE.MathUtils.lerp(petal.closedY, petal.openY, u);
       // 外瓣后期下垂：玫瑰更自然
-      petal.mesh.position.y = y + (isOuter ? -late * (0.014 + (petal.isHero ? 0.006 : 0)) : late * 0.005);
+      petal.mesh.position.y = y + (isOuter ? -late * (0.010 + (petal.isHero ? 0.004 : 0)) : late * 0.003);
     }
     budCore.scale.setScalar(0.4 + smoothstep(0.18, 0.62, p) * 0.58);
     budCore.material.opacity = 1 - smoothstep(0.38, 0.66, p);
     budCore.visible = p < 0.7;
-    sparkles.material.opacity = 0.02 + p * 0.26;
+    sparkles.material.opacity = 0.03 + p * 0.30;
   }
 
   function updatePremiumEffects(time, progress) {

@@ -82,7 +82,8 @@ export function createAtmosphere(quality = {}) {
   dust.geometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
   group.add(dust);
 
-  const streakCount = quality.isMobile ? 4 : 8;
+  // 背景风 streak：更密更明显
+  const streakCount = quality.isMobile ? 6 : 12;
   const streaks = [];
   for (let i = 0; i < streakCount; i++) {
     const mesh = new THREE.Mesh(
@@ -107,18 +108,19 @@ export function createAtmosphere(quality = {}) {
     const open = THREE.MathUtils.clamp(progress, 0, 1);
     const gust = Math.pow(Math.max(0, Math.sin(time * 0.22 - 0.4)), 3);
     const gust2 = Math.pow(Math.max(0, Math.sin(time * 0.15 + 1.2)), 4);
-    windStrength = 0.25 + gust * 0.85 + gust2 * 0.55;
+    // 增强阵风：更强的水平推送与粉尘扬起
+    windStrength = 0.30 + gust * 0.95 + gust2 * 0.7;
     const windX = 1;
-    const lift = windStrength * 0.004;
+    const lift = windStrength * 0.005;
 
     for (const petal of floatingPetals) {
       const { mesh, speedY, speedX, spinX, spinY, spinZ, phase, baseOpacity } = petal;
-      mesh.position.x += speedX * windStrength * 0.016 + Math.sin(time * 0.35 + phase) * 0.003 * windStrength;
-      mesh.position.y += speedY * 0.008 + lift * Math.sin(time * 0.5 + phase);
-      mesh.position.z += Math.sin(time * 0.2 + phase) * 0.001;
-      mesh.rotation.x += spinX * 0.006 * (0.4 + windStrength);
-      mesh.rotation.y += spinY * 0.005 * windStrength;
-      mesh.rotation.z += spinZ * 0.008 * (0.5 + windStrength);
+      mesh.position.x += speedX * windStrength * 0.022 + Math.sin(time * 0.35 + phase) * 0.0042 * windStrength;
+      mesh.position.y += speedY * 0.01 + lift * Math.sin(time * 0.5 + phase);
+      mesh.position.z += Math.sin(time * 0.2 + phase) * 0.0014;
+      mesh.rotation.x += spinX * 0.007 * (0.45 + windStrength);
+      mesh.rotation.y += spinY * 0.006 * windStrength;
+      mesh.rotation.z += spinZ * 0.009 * (0.55 + windStrength);
 
       if (mesh.position.x > 6) {
         mesh.position.x = petal.resetX;
@@ -128,7 +130,7 @@ export function createAtmosphere(quality = {}) {
         mesh.position.y = petal.resetY;
       }
       if (mesh.position.y > 3.5) mesh.position.y = -1.2 - petal.phase * 0.01;
-      mesh.material.opacity = baseOpacity * (0.45 + open * 0.65) * (0.7 + windStrength * 0.35);
+      mesh.material.opacity = baseOpacity * (0.48 + open * 0.67) * (0.72 + windStrength * 0.38);
     }
 
     const positions = dust.geometry.attributes.position.array;
@@ -142,11 +144,11 @@ export function createAtmosphere(quality = {}) {
       positions[i * 3 + 2] = -1.2 - dustSeeds[i * 4 + 3] * 2.8;
     }
     dust.geometry.attributes.position.needsUpdate = true;
-    dust.material.opacity = 0.12 + open * 0.28 + windStrength * 0.08;
+    dust.material.opacity = 0.14 + open * 0.30 + windStrength * 0.10;
 
     for (const streak of streaks) {
-      streak.mesh.position.x += streak.speed * windStrength * 0.05;
-      streak.mesh.material.opacity = (0.03 + open * 0.04) * (0.4 + windStrength * 0.75);
+      streak.mesh.position.x += streak.speed * windStrength * 0.06;
+      streak.mesh.material.opacity = (0.03 + open * 0.05) * (0.45 + windStrength * 0.85);
       if (streak.mesh.position.x > 7) streak.mesh.position.x = -7;
     }
   }
