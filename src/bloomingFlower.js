@@ -213,6 +213,7 @@ export function createBloomingFlower(quality = {}) {
       petals.push({
         mesh,
         pivot,
+        baseYaw: yaw,
         kind,
         closedPitch: whorl.pitchClosed + droop * -0.5 + pitchJitter + sideBias,
         openPitch: whorl.pitchOpen + droop + pitchJitter * 0.6 + sideBias * 1.4,
@@ -242,7 +243,7 @@ export function createBloomingFlower(quality = {}) {
       color: 0xe88898,
       roughness: 0.52,
       emissive: 0xc86078,
-      emissiveIntensity: 0.1,
+      emissiveIntensity: 0.06,
       sheen: 0.6,
       sheenColor: new THREE.Color(0xffb8c8),
       transparent: true,
@@ -315,31 +316,56 @@ export function createBloomingFlower(quality = {}) {
 
   function setBloom(progress) {
     const p = THREE.MathUtils.clamp(progress, 0, 1);
+    const innerUnfurl = smoothstep(0.22, 0.72, p);
+    const outerUnfurl = smoothstep(0.5, 1, p);
     for (const petal of petals) {
       const local = easeInOutCubic(smoothstep(petal.delay, petal.delay + petal.span, p));
-      petal.mesh.rotation.x = THREE.MathUtils.lerp(petal.closedPitch, petal.openPitch, local);
-      petal.mesh.rotation.z = THREE.MathUtils.lerp(petal.closedRoll, petal.openRoll, local) + petal.tilt * local;
+      const u = local;
+      const isOuter = petal.kind === "outer" || petal.kind === "guard" || petal.isHero;
+
+      // 双阶段玫瑰展开：
+      // - 早期：内瓣先打开（旋转/立起）
+      // - 后期：外瓣再外翻并略下垂（更像玫瑰）
+      const pitchT = THREE.MathUtils.lerp(0.85, 1.05, isOuter ? outerUnfurl : innerUnfurl);
+      const rollT = THREE.MathUtils.lerp(0.85, 1.15, isOuter ? outerUnfurl : innerUnfurl);
+      const late = isOuter ? Math.pow(outerUnfurl, 1.12) : Math.pow(innerUnfurl, 1.05) * 0.6;
+
+      const twist = Math.sin(petal.phase + p * 1.6) * (isOuter ? 0.13 : 0.07) * (0.35 + 0.65 * late);
+
+      petal.pivot.rotation.y = petal.baseYaw + twist;
+      petal.mesh.rotation.x =
+        THREE.MathUtils.lerp(petal.closedPitch, petal.openPitch, u) + (isOuter ? 0.12 : 0.04) * late * pitchT;
+
+      petal.mesh.rotation.z =
+        THREE.MathUtils.lerp(petal.closedRoll, petal.openRoll, u) + petal.tilt * u + (isOuter ? 0.18 : 0.06) * late * rollT;
       petal.currentRoll = petal.mesh.rotation.z;
+
       const scale = THREE.MathUtils.lerp(petal.closedScale, petal.openScale, local);
       const width = THREE.MathUtils.lerp(petal.closedWidth, petal.openWidth, local);
-      petal.mesh.scale.set(width, scale, scale);
-      petal.mesh.position.z = THREE.MathUtils.lerp(petal.closedRadius, petal.openRadius, local);
-      petal.mesh.position.y = THREE.MathUtils.lerp(petal.closedY, petal.openY, local);
+      petal.mesh.scale.set(width, scale * (isOuter ? 1 + late * 0.06 : 1), scale * (isOuter ? 1 + late * 0.06 : 1));
+
+      const radius = THREE.MathUtils.lerp(petal.closedRadius, petal.openRadius, local);
+      petal.mesh.position.z = radius * (isOuter ? 1 + late * 0.22 : 1 + late * 0.05);
+
+      const y = THREE.MathUtils.lerp(petal.closedY, petal.openY, local);
+      // 外瓣后期下垂：玫瑰更自然
+      petal.mesh.position.y = y + (isOuter ? -late * (0.014 + (petal.isHero ? 0.006 : 0)) : late * 0.005);
     }
-    budCore.scale.setScalar(0.45 + smoothstep(0.15, 0.65, p) * 0.5);
-    budCore.material.opacity = 1 - smoothstep(0.35, 0.75, p);
-    budCore.visible = p < 0.82;
-    sparkles.material.opacity = 0.03 + p * 0.32;
+    budCore.scale.setScalar(0.4 + smoothstep(0.18, 0.62, p) * 0.58);
+    budCore.material.opacity = 1 - smoothstep(0.38, 0.66, p);
+    budCore.visible = p < 0.7;
+    sparkles.material.opacity = 0.02 + p * 0.26;
   }
 
   function updatePremiumEffects(time, progress) {
     const p = THREE.MathUtils.clamp(progress, 0, 1);
     const pulse = 0.5 + Math.sin(time * 1.2) * 0.5;
-    const bloomGlow = 0.05 + p * 0.14 + pulse * p * 0.025;
+    const bloomGlow = 0.03 + p * 0.09 + pulse * p * 0.015;
     for (const material of petalMaterials) {
-      const edgeFactor = material.transmission > 0.3 ? 0.48 : 0.35;
+      const edgeFactor = material.transmission > 0.3 ? 0.38 : 0.26;
       material.emissiveIntensity = bloomGlow * edgeFactor;
     }
+    budCore.material.emissiveIntensity = 0.03 + p * 0.04;
   }
 
   function updateSparkles(time, progress) {

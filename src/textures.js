@@ -105,11 +105,12 @@ export function createPetalMaps(kind = "outer", size = 1024) {
       data[i + 2] = THREE.MathUtils.clamp(b + grain * 0.35, 0, 255);
       data[i + 3] = Math.round(Math.pow(mask, 0.72) * 255);
 
-      const emissiveStrength = (edgeGlow * 0.18 + Math.pow(1 - xNorm, 3) * v * 0.1) * mask;
-      emissiveData[i] = THREE.MathUtils.clamp(palette.edge[0] * emissiveStrength * 1.08, 0, 255);
-      emissiveData[i + 1] = THREE.MathUtils.clamp(palette.edge[1] * emissiveStrength * 0.82, 0, 255);
-      emissiveData[i + 2] = THREE.MathUtils.clamp(palette.edge[2] * emissiveStrength * 0.88, 0, 255);
-      emissiveData[i + 3] = Math.round(emissiveStrength * 255);
+      // emissive 会直接影响 bloom/高光观感：继续压暗，避免开放后“发白过亮”
+      const emissiveStrength = (edgeGlow * 0.12 + Math.pow(1 - xNorm, 3) * v * 0.06) * mask;
+      emissiveData[i] = THREE.MathUtils.clamp(palette.edge[0] * emissiveStrength * 0.92, 0, 255);
+      emissiveData[i + 1] = THREE.MathUtils.clamp(palette.edge[1] * emissiveStrength * 0.76, 0, 255);
+      emissiveData[i + 2] = THREE.MathUtils.clamp(palette.edge[2] * emissiveStrength * 0.82, 0, 255);
+      emissiveData[i + 3] = Math.round(emissiveStrength * 220);
     }
   }
 

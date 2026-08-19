@@ -233,22 +233,22 @@ function animate() {
   const wind = atmosphere?.getWindStrength?.() ?? 0;
   flower.updateIdle(time, effectProgress, wind);
 
-  const glowPulse = 0.94 + Math.sin(time * 1.15) * 0.05 + displayProgress * 0.08;
-  halo.scale.setScalar((1.0 + displayProgress * 0.1) * glowPulse);
-  halo.material.opacity = 0.025 + displayProgress * 0.04;
-  goldHalo.scale.setScalar((0.62 + displayProgress * 0.16) * (0.95 + Math.sin(time * 1.4) * 0.04));
-  goldHalo.material.opacity = 0.015 + displayProgress * 0.045;
+  const glowPulse = 0.84 + Math.sin(time * 1.15) * 0.03 + displayProgress * 0.05;
+  halo.scale.setScalar((0.92 + displayProgress * 0.06) * glowPulse);
+  halo.material.opacity = 0.015 + displayProgress * 0.028;
+  goldHalo.scale.setScalar((0.56 + displayProgress * 0.12) * (0.92 + Math.sin(time * 1.4) * 0.03));
+  goldHalo.material.opacity = 0.008 + displayProgress * 0.022;
 
   if (bloomPass) {
-    bloomPass.strength = quality.bloomStrength * (0.5 + effectProgress * (petMode ? 0.32 : 0.26));
-    bloomPass.threshold = quality.bloomThreshold + effectProgress * 0.1;
+    bloomPass.strength = quality.bloomStrength * (0.38 + effectProgress * (petMode ? 0.18 : 0.14));
+    bloomPass.threshold = quality.bloomThreshold + effectProgress * 0.22;
   }
 
-  coreLight.intensity = (quality.isMobile ? 3.2 : 5.0) * (0.25 + effectProgress * 0.5);
-  keyLight.intensity = (quality.isMobile ? 1.6 : 1.5) * (0.76 + effectProgress * 0.2);
-  rimLight.intensity = (quality.isMobile ? 1.3 : 1.5) * (0.7 + effectProgress * 0.24);
-  fillLight.intensity = (quality.isMobile ? 2.0 : 2.8) * (0.65 + effectProgress * 0.24);
-  bottomLight.intensity = (quality.isMobile ? 1.2 : 1.8) * (0.6 + effectProgress * 0.22);
+  coreLight.intensity = (quality.isMobile ? 2.6 : 4.2) * (0.18 + effectProgress * 0.36);
+  keyLight.intensity = (quality.isMobile ? 1.3 : 1.25) * (0.62 + effectProgress * 0.14);
+  rimLight.intensity = (quality.isMobile ? 1.15 : 1.25) * (0.58 + effectProgress * 0.18);
+  fillLight.intensity = (quality.isMobile ? 1.6 : 2.2) * (0.55 + effectProgress * 0.18);
+  bottomLight.intensity = (quality.isMobile ? 1.0 : 1.4) * (0.52 + effectProgress * 0.18);
 
   if (petMode) controls.autoRotate = true;
   flowerRoot.position.y = flowerRoot.userData.baseY + Math.sin(time * 0.45) * 0.02;
@@ -270,7 +270,7 @@ function boot() {
   renderer.setPixelRatio(quality.pixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = quality.isMobile ? 0.96 : 0.88;
+  renderer.toneMappingExposure = quality.isMobile ? 0.86 : 0.78;
 
   hideLoading();
 
