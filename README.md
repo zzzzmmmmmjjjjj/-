@@ -34,7 +34,9 @@ npm run preview
 ## 手机怎么看
 
 1. **同一局域网**：电脑跑 `npm run dev`，手机浏览器打开 Network 地址。
-2. **发给别人**：把仓库发布到 GitHub Pages 后，用手机浏览器打开 Pages 链接。
+2. **发给别人 / 微信分享**：启用 GitHub Pages 后，直接分享链接  
+   **https://zzzzmmmmmjjjjj.github.io/-/**  
+   首次需在仓库 [Settings → Pages](https://github.com/zzzzmmmmmjjjjj/-/settings/pages) 选择 **Deploy from a branch**，分支选 `gh-pages`、目录 `/ (root)`，保存后等 1～2 分钟生效。
 3. **微信**：点右上角 `···` →「在浏览器中打开」，避免内置 WebView 限制音频和 WebGL。
 4. 第一次进入会显示「轻触屏幕，花开」，点一下才会开始动画并尝试播放音乐（手机浏览器要求用户手势）。
 
