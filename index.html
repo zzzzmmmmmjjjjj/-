@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no"
     />
-    <meta name="theme-color" content="#090406" />
+    <meta name="theme-color" content="#12080c" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -39,10 +39,10 @@
     />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <title>朝暮与卿 · 缓放牡丹</title>
-    <script type="module" crossorigin src="./assets/index-CBeeD4-g.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BIv57dEI.css">
+    <script type="module" crossorigin src="./assets/index-EKFCNonW.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DR3et9J_.css">
   </head>
   <body>
     <canvas id="scene" aria-label="高清缓放的三维牡丹"></canvas>
@@ -68,8 +68,26 @@
     <button class="start-gate" type="button">
       <span class="start-gate-ring" aria-hidden="true"></span>
       <strong>轻触屏幕，花开</strong>
-      <small class="start-gate-note">手机浏览器可直接观看 · 微信请点右上角用浏览器打开</small>
+      <small class="start-gate-note">添加到主屏幕，桌面随时赏 3D 牡丹</small>
     </button>
+
+    <div class="install-banner hidden" id="install-banner">
+      <div class="install-banner-copy">
+        <strong>添加到主屏幕</strong>
+        <span>桌面一键打开 3D 缓放牡丹</span>
+      </div>
+      <button type="button" id="install-btn">添加</button>
+      <button type="button" class="install-close" aria-label="关闭">×</button>
+    </div>
+
+    <div class="install-guide hidden" id="install-guide">
+      <div class="install-guide-card">
+        <h2>添加到主屏幕</h2>
+        <p class="install-guide-ios">iPhone：Safari 底部 <strong>分享</strong> → <strong>添加到主屏幕</strong></p>
+        <p class="install-guide-android">Android：Chrome 菜单 <strong>⋮</strong> → <strong>添加到主屏幕</strong></p>
+        <button type="button" class="install-guide-close">知道了</button>
+      </div>
+    </div>
 
     <audio id="background-music" loop playsinline webkit-playsinline preload="metadata"></audio>
 
