@@ -161,12 +161,14 @@ export function createBloomingFlower() {
       mesh.receiveShadow = false;
       pivot.add(mesh);
 
-      const closedPitch = -(0.06 + t * 0.05 + (rand() - 0.5) * 0.03);
-      const openPitch = -(0.28 + t * 1.05 + (rand() - 0.5) * 0.08);
-      const closedScale = 0.62 + t * 0.08;
-      const openScale = (layer.kind === "inner" ? 0.72 : layer.kind === "mid" ? 0.92 : 1.08) * (0.92 + rand() * 0.16);
-      const delay = 0.04 + t * 0.42 + rand() * 0.05;
-      const span = 0.38 + (1 - t) * 0.12;
+      const closedPitch = -0.42 + t * 0.12 + (rand() - 0.5) * 0.04;
+      const openPitch = 0.28 + t * 0.72 + (rand() - 0.5) * 0.06;
+      const closedScale = 0.34 + t * 0.04;
+      const openScale = (layer.kind === "inner" ? 0.72 : layer.kind === "mid" ? 0.95 : 1.14) * (0.92 + rand() * 0.14);
+      const closedWidth = 0.48 + t * 0.08;
+      const openWidth = 1;
+      const delay = t * 0.5 + rand() * 0.03;
+      const span = 0.32 + (1 - t) * 0.18;
 
       petals.push({
         mesh,
@@ -177,8 +179,10 @@ export function createBloomingFlower() {
         openRoll: (rand() - 0.5) * 0.22,
         closedScale,
         openScale,
-        closedRadius: layer.radius * 0.35,
-        openRadius: layer.radius + t * 0.04,
+        closedWidth,
+        openWidth,
+        closedRadius: 0.004,
+        openRadius: layer.radius + t * 0.05,
         delay,
         span,
         phase: rand() * Math.PI * 2,
@@ -301,15 +305,16 @@ export function createBloomingFlower() {
       petal.mesh.rotation.x = THREE.MathUtils.lerp(petal.closedPitch, petal.openPitch, local);
       petal.mesh.rotation.z = THREE.MathUtils.lerp(petal.closedRoll, petal.openRoll, local);
       const scale = THREE.MathUtils.lerp(petal.closedScale, petal.openScale, local);
-      petal.mesh.scale.setScalar(scale);
+      const width = THREE.MathUtils.lerp(petal.closedWidth, petal.openWidth, local);
+      petal.mesh.scale.set(width, scale, scale);
       petal.mesh.position.z = THREE.MathUtils.lerp(petal.closedRadius, petal.openRadius, local);
-      petal.mesh.position.y = THREE.MathUtils.lerp(-0.02, 0.01, local);
+      petal.mesh.position.y = THREE.MathUtils.lerp(0.0, 0.02, local);
     }
 
     const stamenShow = smoothstep(0.35, 0.82, p);
     stamenGroup.scale.setScalar(0.15 + stamenShow * 0.85);
     stamenGroup.position.y = THREE.MathUtils.lerp(-0.04, 0.06, stamenShow);
-    sparkles.material.opacity = 0.15 + p * 0.75;
+    sparkles.material.opacity = 0.04 + p * 0.7;
   }
 
   function updateSparkles(time, progress) {
@@ -318,11 +323,11 @@ export function createBloomingFlower() {
     for (let i = 0; i < sparkleCount; i++) {
       const seed = sparkleSeeds[i * 3];
       const speed = sparkleSeeds[i * 3 + 1];
-      const radius = 0.25 + sparkleSeeds[i * 3 + 2] * (0.4 + open * 1.15);
-      const rising = (time * 0.08 * speed + seed) % 1;
-      const y = -0.1 + rising * (1.6 + open * 0.4);
-      const angle = seed + time * 0.15 * speed;
-      const wobble = Math.sin(time * speed + seed) * 0.08;
+      const radius = 0.1 + sparkleSeeds[i * 3 + 2] * (0.12 + open * 1.05);
+      const rising = (time * 0.07 * speed + seed) % 1;
+      const y = 0.08 + rising * (0.28 + open * 1.25);
+      const angle = seed + time * 0.12 * speed;
+      const wobble = Math.sin(time * speed + seed) * 0.05;
       positions[i * 3] = Math.cos(angle) * (radius + wobble);
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = Math.sin(angle) * (radius + wobble * 0.7);

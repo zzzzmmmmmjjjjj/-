@@ -9,6 +9,7 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { createBloomingFlower } from "./bloomingFlower.js";
 
 const BLOOM_DURATION = 11;
+const BLOOM_HOLD = 0.7;
 
 const canvas = document.querySelector("#scene");
 const loading = document.querySelector(".loading");
@@ -81,6 +82,11 @@ composer.addPass(new OutputPass());
 const clock = new THREE.Clock();
 let bloomElapsed = 0;
 let isPlayingBloom = true;
+const lockedProgress = (() => {
+  const value = Number(new URLSearchParams(location.search).get("p"));
+  return Number.isFinite(value) ? THREE.MathUtils.clamp(value, 0, 1) : null;
+})();
+if (lockedProgress !== null) isPlayingBloom = false;
 
 function applyResponsiveLayout() {
   if (innerWidth < 700) {
@@ -99,6 +105,7 @@ function applyResponsiveLayout() {
 }
 
 function replayBloom() {
+  if (lockedProgress !== null) return;
   bloomElapsed = 0;
   isPlayingBloom = true;
   bloomLabel.textContent = "开放中";
@@ -142,9 +149,11 @@ function animate() {
   const delta = clock.getDelta();
   const time = clock.elapsedTime;
 
-  if (isPlayingBloom) {
+  if (lockedProgress !== null) {
+    flower.setBloom(lockedProgress);
+  } else if (isPlayingBloom) {
     bloomElapsed += delta;
-    const progress = Math.min(bloomElapsed / BLOOM_DURATION, 1);
+    const progress = THREE.MathUtils.clamp((bloomElapsed - BLOOM_HOLD) / BLOOM_DURATION, 0, 1);
     flower.setBloom(progress);
     if (progress >= 1) {
       isPlayingBloom = false;
@@ -152,7 +161,7 @@ function animate() {
     }
   }
 
-  const progress = Math.min(bloomElapsed / BLOOM_DURATION, 1);
+  const progress = lockedProgress ?? THREE.MathUtils.clamp((bloomElapsed - BLOOM_HOLD) / BLOOM_DURATION, 0, 1);
   flower.updateSparkles(time, progress);
   flower.updateIdle(time, progress);
   flowerRoot.position.y = flowerRoot.userData.baseY + Math.sin(time * 0.45) * 0.02;
@@ -162,7 +171,8 @@ function animate() {
 
 applyResponsiveLayout();
 flowerRoot.userData.baseY = flowerRoot.position.y;
-bloomLabel.textContent = "开放中";
+flower.setBloom(lockedProgress ?? 0);
+bloomLabel.textContent = lockedProgress !== null ? "预览" : "开放中";
 loading.classList.add("hidden");
 
 addEventListener("resize", () => {
