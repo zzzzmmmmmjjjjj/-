@@ -154,7 +154,7 @@ addEventListener("pointerdown", (event) => {
 
 function animate() {
   requestAnimationFrame(animate);
-  const delta = clock.getDelta();
+  const delta = Math.min(clock.getDelta(), 0.05);
   const time = clock.elapsedTime;
 
   if (lockedProgress !== null) {
@@ -189,7 +189,15 @@ function animate() {
 
 applyResponsiveLayout();
 flowerRoot.userData.baseY = flowerRoot.position.y;
-flower.setBloom(lockedProgress ?? 0);
+displayProgress = lockedProgress ?? 0;
+flower.setBloom(displayProgress);
+if (lockedProgress === null) {
+  clock.stop();
+  clock.start();
+  bloomElapsed = 0;
+  isPlayingBloom = true;
+  isClosing = false;
+}
 bloomLabel.textContent = lockedProgress !== null ? "预览" : "开放中";
 loading.classList.add("hidden");
 
