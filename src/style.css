@@ -205,6 +205,18 @@ h1 {
 
 .loading p { color: rgba(255,255,255,.4); font-size: 10px; letter-spacing: .25em; }
 
+.loading.error span {
+  border-top-color: #ff9aa8;
+  animation: none;
+}
+
+.loading.error p {
+  color: rgba(255, 200, 205, .82);
+  max-width: 16em;
+  line-height: 1.7;
+  text-align: center;
+}
+
 .hint {
   position: fixed;
   left: 50%;

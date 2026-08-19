@@ -41,7 +41,9 @@ export function createAtmosphere(quality = {}) {
       spin: (rand() - 0.5) * 0.4,
       drift: (rand() - 0.5) * 0.25,
       phase: rand() * Math.PI * 2,
-      baseOpacity: mesh.material.opacity
+      baseOpacity: mesh.material.opacity,
+      resetY: -2.2 - rand() * 1.5,
+      resetX: (rand() - 0.5) * 8
     });
   }
 
@@ -97,8 +99,8 @@ export function createAtmosphere(quality = {}) {
       mesh.rotation.z += spin * 0.004;
       mesh.rotation.y += spin * 0.002;
       if (mesh.position.y > 3.2) {
-        mesh.position.y = -2.2 - rand() * 1.5;
-        mesh.position.x = (rand() - 0.5) * 8;
+        mesh.position.y = petal.resetY;
+        mesh.position.x = petal.resetX;
       }
       mesh.material.opacity = baseOpacity * (0.35 + open * 0.85);
     }
