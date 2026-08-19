@@ -3,7 +3,7 @@
 :root {
   color: #fff7f5;
   font-family: "Montserrat", "PingFang SC", "Noto Sans SC", sans-serif;
-  background: #090406;
+  background: #12080c;
   font-synthesis: none;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -26,9 +26,21 @@ html, body {
 
 body {
   background:
-    radial-gradient(circle at 50% 43%, rgba(100, 29, 43, .2), transparent 31%),
-    radial-gradient(circle at 20% 80%, rgba(49, 19, 25, .2), transparent 30%),
-    #090406;
+    radial-gradient(circle at 50% 38%, rgba(120, 36, 56, .28), transparent 34%),
+    radial-gradient(circle at 50% 78%, rgba(72, 24, 36, .22), transparent 28%),
+    radial-gradient(circle at 20% 80%, rgba(49, 19, 25, .16), transparent 30%),
+    #12080c;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(circle at center, transparent 42%, rgba(8, 2, 5, .42) 100%),
+    linear-gradient(to top, rgba(255, 170, 190, .06), transparent 28%);
 }
 
 #scene {
@@ -39,6 +51,7 @@ body {
   height: 100%;
   cursor: grab;
   touch-action: none;
+  z-index: 0;
 }
 
 #scene:active { cursor: grabbing; }
@@ -49,6 +62,7 @@ body {
   left: calc(clamp(24px, 6vw, 88px) + var(--safe-left));
   z-index: 2;
   pointer-events: none;
+  transition: opacity 1.2s ease, transform 1.2s ease;
 }
 
 .eyebrow {
@@ -175,7 +189,7 @@ h1 {
   display: grid;
   place-content: center;
   justify-items: center;
-  background: #090406;
+  background: #12080c;
   transition: opacity 1s ease, visibility 1s;
 }
 
@@ -251,10 +265,143 @@ h1 {
 
 .start-gate.hidden,
 .hint.hidden,
-.loading.hidden {
+.loading.hidden,
+.install-banner.hidden,
+.install-guide.hidden {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+}
+
+.install-banner {
+  position: fixed;
+  left: calc(16px + var(--safe-left));
+  right: calc(16px + var(--safe-right));
+  bottom: calc(18px + var(--safe-bottom));
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 190, 200, .22);
+  border-radius: 18px;
+  background: rgba(24, 8, 12, .72);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 40px rgba(255, 100, 130, .12);
+}
+
+.install-banner-copy {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.install-banner-copy strong {
+  font-size: 12px;
+  letter-spacing: .12em;
+}
+
+.install-banner-copy span {
+  color: rgba(255, 243, 241, .52);
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+
+#install-btn {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff7f5;
+  background: linear-gradient(135deg, #ff7a98, #e0486c);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .16em;
+  cursor: pointer;
+}
+
+.install-close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  color: rgba(255, 243, 241, .55);
+  background: rgba(255, 255, 255, .06);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.install-guide {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-content: center;
+  padding: 24px;
+  background: rgba(8, 2, 5, .58);
+  backdrop-filter: blur(8px);
+}
+
+.install-guide-card {
+  width: min(100%, 360px);
+  padding: 28px 24px;
+  border: 1px solid rgba(255, 190, 200, .18);
+  border-radius: 22px;
+  background: rgba(18, 8, 12, .92);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+}
+
+.install-guide-card h2 {
+  margin: 0 0 18px;
+  font-family: "Noto Serif SC", serif;
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: .18em;
+}
+
+.install-guide-card p {
+  margin: 0 0 12px;
+  color: rgba(255, 243, 241, .68);
+  font-size: 12px;
+  line-height: 1.8;
+  letter-spacing: .06em;
+}
+
+.install-guide-close {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 18px;
+  border: 1px solid rgba(255, 190, 200, .24);
+  border-radius: 999px;
+  color: #fff7f5;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .18em;
+  cursor: pointer;
+}
+
+html.is-standalone .install-banner,
+html.is-standalone .install-guide,
+html.is-standalone .start-gate-note {
+  display: none;
+}
+
+html.is-standalone body {
+  background: #12080c;
+}
+
+html.is-standalone .intro.immersive {
+  opacity: 0;
+  transform: translateY(-12px);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
+
+html.is-standalone .bloom,
+html.is-standalone .music {
+  opacity: .72;
 }
 
 @keyframes pulse {

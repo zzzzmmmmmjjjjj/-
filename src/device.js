@@ -10,24 +10,37 @@ export function detectDevice() {
   const isMobile = coarse || isIOS || isAndroid || narrow || /Mobile/i.test(ua);
   const saveData = Boolean(navigator.connection?.saveData);
   const cores = navigator.hardwareConcurrency || 8;
-  const lowPower = isMobile || saveData || cores <= 4;
+  const lowPower = saveData || cores <= 4;
 
   return {
     isMobile,
     isIOS,
+    isAndroid,
     isWeChat,
     saveData,
-    pixelRatio: isMobile ? Math.min(devicePixelRatio || 1, 1.5) : Math.min(devicePixelRatio || 1, 2),
+    pixelRatio: isMobile ? Math.min(devicePixelRatio || 1, 1.75) : Math.min(devicePixelRatio || 1, 2),
     antialias: !isMobile,
-    postBloom: !lowPower,
-    environment: !isMobile,
+    postBloom: true,
+    bloomStrength: isMobile ? 0.26 : 0.42,
+    bloomRadius: isMobile ? 0.38 : 0.52,
+    bloomThreshold: isMobile ? 0.78 : 0.82,
+    environment: !lowPower || !isMobile,
     transmission: !isMobile,
     textureSize: isMobile ? 512 : 1024,
     petalSegments: isMobile ? { w: 16, l: 22 } : { w: 40, l: 56 },
     lowPoly: isMobile,
-    sparkleCount: isMobile ? 160 : 780,
-    stamenCount: isMobile ? 18 : 48
+    sparkleCount: isMobile ? 220 : 900,
+    stamenCount: isMobile ? 18 : 48,
+    compactStem: isMobile
   };
+}
+
+export function isStandaloneApp() {
+  return (
+    window.matchMedia?.("(display-mode: standalone)")?.matches ||
+    window.matchMedia?.("(display-mode: fullscreen)")?.matches ||
+    navigator.standalone === true
+  );
 }
 
 export function viewSize() {

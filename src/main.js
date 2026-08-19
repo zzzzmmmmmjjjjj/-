@@ -7,7 +7,7 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { createBloomingFlower } from "./bloomingFlower.js";
-import { detectDevice, viewSize } from "./device.js";
+import { detectDevice, isStandaloneApp, viewSize } from "./device.js";
 
 const BLOOM_DURATION = 11;
 const BLOOM_HOLD = 0.7;
@@ -21,11 +21,19 @@ const musicButton = document.querySelector(".music");
 const music = document.querySelector("#background-music");
 const startGate = document.querySelector(".start-gate");
 const hint = document.querySelector(".hint");
+const intro = document.querySelector(".intro");
+const installBanner = document.querySelector(".install-banner");
+const installBtn = document.querySelector("#install-btn");
+const installClose = document.querySelector(".install-close");
+const installGuide = document.querySelector(".install-guide");
+const installGuideClose = document.querySelector(".install-guide-close");
 const assetUrl = (fileName) => `${import.meta.env.BASE_URL}${fileName}`;
 const quality = detectDevice();
+const standalone = isStandaloneApp();
 
 if (quality.isMobile) document.documentElement.classList.add("is-mobile");
 if (quality.isWeChat) document.documentElement.classList.add("is-wechat");
+if (standalone) document.documentElement.classList.add("is-standalone");
 
 music.src = assetUrl("the-rose.mp3");
 music.volume = 0.42;
@@ -34,11 +42,11 @@ music.setAttribute("webkit-playsinline", "");
 music.preload = quality.isMobile ? "metadata" : "auto";
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x090406, quality.isMobile ? 0.03 : 0.045);
-scene.background = new THREE.Color(0x090406);
+scene.fog = new THREE.FogExp2(0x12080c, quality.isMobile ? 0.016 : 0.024);
+scene.background = new THREE.Color(0x12080c);
 
 const { width: startWidth, height: startHeight } = viewSize();
-const camera = new THREE.PerspectiveCamera(quality.isMobile ? 42 : 38, startWidth / startHeight, 0.1, 80);
+const camera = new THREE.PerspectiveCamera(quality.isMobile ? 40 : 38, startWidth / startHeight, 0.1, 80);
 camera.position.set(1.35, 0.42, 5.6);
 
 const renderer = new THREE.WebGLRenderer({
@@ -53,18 +61,18 @@ renderer.setSize(startWidth, startHeight, false);
 renderer.setPixelRatio(quality.pixelRatio);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = quality.isMobile ? 1.18 : 1.08;
+renderer.toneMappingExposure = quality.isMobile ? 1.28 : 1.16;
 
 if (quality.environment) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.32;
+  scene.environmentIntensity = quality.isMobile ? 0.42 : 0.38;
 }
 
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.enablePan = false;
-controls.minDistance = 3.4;
+controls.minDistance = 3.2;
 controls.maxDistance = 9;
 controls.autoRotate = false;
 controls.target.set(0.85, 0.05, 0);
@@ -72,34 +80,58 @@ controls.rotateSpeed = quality.isMobile ? 0.72 : 1;
 controls.touches.ONE = THREE.TOUCH.ROTATE;
 controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
 
-const keyLight = new THREE.DirectionalLight(0xffe4ec, quality.isMobile ? 2.4 : 2.1);
-keyLight.position.set(3.4, 4.2, 3.8);
+const keyLight = new THREE.DirectionalLight(0xfff0f4, quality.isMobile ? 2.8 : 2.4);
+keyLight.position.set(3.4, 4.8, 3.8);
 scene.add(keyLight);
 
-const rimLight = new THREE.DirectionalLight(0xffc1d0, quality.isMobile ? 2.2 : 2.6);
-rimLight.position.set(-3.8, 1.6, -4.4);
+const rimLight = new THREE.DirectionalLight(0xffc8d8, quality.isMobile ? 2.6 : 2.8);
+rimLight.position.set(-3.8, 2.2, -4.4);
 scene.add(rimLight);
 
-const fillLight = new THREE.PointLight(0xff8aa0, quality.isMobile ? 4.2 : 6.5, 12, 2);
-fillLight.position.set(0.4, 0.8, 2.4);
+const fillLight = new THREE.PointLight(0xff9eb8, quality.isMobile ? 5.2 : 7.2, 14, 1.8);
+fillLight.position.set(0.4, 1.1, 2.6);
 scene.add(fillLight);
 
-scene.add(new THREE.HemisphereLight(0xffdce4, 0x12080b, quality.isMobile ? 0.7 : 0.55));
+const bottomLight = new THREE.PointLight(0xffb8c8, quality.isMobile ? 3.8 : 5.5, 10, 1.6);
+bottomLight.position.set(0.2, -0.85, 1.8);
+scene.add(bottomLight);
+
+const backGlow = new THREE.PointLight(0xff6a8a, quality.isMobile ? 2.4 : 4.2, 16, 2);
+backGlow.position.set(-0.4, 0.55, -2.8);
+scene.add(backGlow);
+
+scene.add(new THREE.HemisphereLight(0xffe8ee, 0x3a1824, quality.isMobile ? 0.95 : 0.72));
+scene.add(new THREE.AmbientLight(0xffd8e4, 0.18));
+
+const halo = new THREE.Mesh(
+  new THREE.SphereGeometry(2.4, 32, 32),
+  new THREE.MeshBasicMaterial({
+    color: 0xff7090,
+    transparent: true,
+    opacity: 0.07,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.BackSide
+  })
+);
+halo.position.set(0.2, 0.35, -0.4);
+scene.add(halo);
 
 const flowerRoot = new THREE.Group();
 scene.add(flowerRoot);
 const flower = createBloomingFlower(quality);
 flowerRoot.add(flower.group);
 
-let composer = null;
-let bloomPass = null;
-if (quality.postBloom) {
-  composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, camera));
-  bloomPass = new UnrealBloomPass(new THREE.Vector2(startWidth, startHeight), 0.38, 0.52, 0.82);
-  composer.addPass(bloomPass);
-  composer.addPass(new OutputPass());
-}
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(startWidth, startHeight),
+  quality.bloomStrength,
+  quality.bloomRadius,
+  quality.bloomThreshold
+);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
 
 const clock = new THREE.Clock();
 let bloomElapsed = 0;
@@ -113,8 +145,8 @@ const lockedProgress = (() => {
   const value = Number(raw);
   return Number.isFinite(value) ? THREE.MathUtils.clamp(value, 0, 1) : null;
 })();
-let awaitingStart = quality.isMobile && lockedProgress === null;
-if (lockedProgress !== null) {
+let awaitingStart = quality.isMobile && lockedProgress === null && !standalone;
+if (lockedProgress !== null || standalone) {
   awaitingStart = false;
   isPlayingBloom = false;
 }
@@ -123,17 +155,17 @@ function applyResponsiveLayout() {
   const { width, height } = viewSize();
   const portrait = height >= width;
   if (quality.isMobile || width < 700) {
-    const scale = portrait ? 0.78 : 0.68;
-    flowerRoot.position.set(0, portrait ? -0.22 : -0.08, 0);
+    const scale = portrait ? 0.86 : 0.76;
+    flowerRoot.position.set(0, portrait ? 0.08 : 0.02, 0);
     flowerRoot.scale.setScalar(scale);
-    camera.position.set(0, portrait ? 0.18 : 0.28, portrait ? 5.6 : 5.1);
-    controls.target.set(0, portrait ? 0.02 : 0.08, 0);
-    flowerRoot.rotation.set(-0.04, 0.18, 0);
+    camera.position.set(0, portrait ? 0.34 : 0.42, portrait ? 5.15 : 4.85);
+    controls.target.set(0, portrait ? 0.18 : 0.22, 0);
+    flowerRoot.rotation.set(-0.03, 0.16, 0);
   } else {
-    flowerRoot.position.set(0.95, -0.05, 0);
+    flowerRoot.position.set(0.95, 0.08, 0);
     flowerRoot.scale.setScalar(1);
-    camera.position.set(1.35, 0.42, 5.6);
-    controls.target.set(0.85, 0.05, 0);
+    camera.position.set(1.35, 0.52, 5.6);
+    controls.target.set(0.85, 0.18, 0);
     flowerRoot.rotation.set(-0.08, 0.55, -0.16);
   }
   controls.update();
@@ -145,8 +177,8 @@ function resizeRenderer() {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height, false);
   renderer.setPixelRatio(quality.pixelRatio);
-  composer?.setSize(width, height);
-  bloomPass?.setSize(width, height);
+  composer.setSize(width, height);
+  bloomPass.setSize(width, height);
   applyResponsiveLayout();
   flowerRoot.userData.baseY = flowerRoot.position.y;
 }
@@ -190,7 +222,8 @@ musicButton.addEventListener("click", async (event) => {
 
 function beginBloom() {
   startGate?.classList.add("hidden");
-  hint?.classList.toggle("hidden", !quality.isMobile);
+  installBanner?.classList.add("hidden");
+  hint?.classList.toggle("hidden", !quality.isMobile || standalone);
   if (!awaitingStart && isPlayingBloom) return;
   awaitingStart = false;
   clock.stop();
@@ -215,6 +248,46 @@ if (lockedProgress !== null) {
   startGate?.classList.add("hidden");
 }
 
+let deferredInstallPrompt = null;
+
+function showInstallBanner() {
+  if (standalone || quality.isWeChat || sessionStorage.getItem("install-dismissed")) return;
+  installBanner?.classList.remove("hidden");
+}
+
+function hideInstallBanner() {
+  installBanner?.classList.add("hidden");
+  sessionStorage.setItem("install-dismissed", "1");
+}
+
+installBtn?.addEventListener("click", async () => {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    hideInstallBanner();
+    return;
+  }
+  installGuide?.classList.remove("hidden");
+});
+
+installClose?.addEventListener("click", hideInstallBanner);
+installGuideClose?.addEventListener("click", () => installGuide?.classList.add("hidden"));
+
+addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  showInstallBanner();
+});
+
+if (quality.isIOS && !standalone && !quality.isWeChat) {
+  setTimeout(showInstallBanner, 2800);
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {});
+}
+
 function animate() {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.05);
@@ -223,7 +296,9 @@ function animate() {
   if (awaitingStart) {
     flower.setBloom(0);
     flower.updateSparkles(time, 0);
-    renderer.render(scene, camera);
+    flower.updatePremiumEffects(time, 0);
+    halo.scale.setScalar(1 + Math.sin(time * 0.8) * 0.04);
+    composer.render();
     return;
   }
 
@@ -246,16 +321,26 @@ function animate() {
     if (displayProgress >= 1) {
       isPlayingBloom = false;
       bloomLabel.textContent = "再开放一次";
+      if (standalone) intro?.classList.add("immersive");
     }
   }
 
   flower.setBloom(displayProgress);
   flower.updateSparkles(time, displayProgress);
   flower.updateIdle(time, displayProgress);
+  flower.updatePremiumEffects(time, displayProgress);
+
+  const glowPulse = 0.9 + Math.sin(time * 1.2) * 0.1 + displayProgress * 0.25;
+  halo.scale.setScalar((1.05 + displayProgress * 0.18) * glowPulse);
+  halo.material.opacity = 0.05 + displayProgress * 0.08;
+  bloomPass.strength = quality.bloomStrength * (0.82 + displayProgress * 0.38);
+  fillLight.intensity = (quality.isMobile ? 5.2 : 7.2) * (0.85 + displayProgress * 0.35);
+  bottomLight.intensity = (quality.isMobile ? 3.8 : 5.5) * (0.9 + displayProgress * 0.28);
+  backGlow.intensity = (quality.isMobile ? 2.4 : 4.2) * (0.75 + displayProgress * 0.45);
+
   flowerRoot.position.y = flowerRoot.userData.baseY + Math.sin(time * 0.45) * 0.02;
   controls.update(delta);
-  if (composer) composer.render();
-  else renderer.render(scene, camera);
+  composer.render();
 }
 
 applyResponsiveLayout();
@@ -263,6 +348,7 @@ flowerRoot.userData.baseY = flowerRoot.position.y;
 displayProgress = 0;
 flower.setBloom(0);
 loading.classList.add("hidden");
+
 if (awaitingStart) {
   bloomLabel.textContent = "轻触开启";
 } else {
