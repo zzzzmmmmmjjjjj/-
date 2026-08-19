@@ -3,7 +3,7 @@
 :root {
   color: #fff7f5;
   font-family: "Montserrat", "PingFang SC", "Noto Sans SC", sans-serif;
-  background: #12080c;
+  background: #060204;
   font-synthesis: none;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -26,10 +26,11 @@ html, body {
 
 body {
   background:
-    radial-gradient(circle at 50% 38%, rgba(120, 36, 56, .28), transparent 34%),
-    radial-gradient(circle at 50% 78%, rgba(72, 24, 36, .22), transparent 28%),
-    radial-gradient(circle at 20% 80%, rgba(49, 19, 25, .16), transparent 30%),
-    #12080c;
+    radial-gradient(circle at 58% 36%, rgba(120, 28, 42, .34), transparent 36%),
+    radial-gradient(circle at 72% 18%, rgba(180, 110, 40, .08), transparent 24%),
+    radial-gradient(circle at 50% 82%, rgba(48, 12, 20, .24), transparent 32%),
+    radial-gradient(circle at 18% 72%, rgba(32, 8, 14, .18), transparent 28%),
+    #060204;
 }
 
 body::after {
@@ -39,8 +40,8 @@ body::after {
   pointer-events: none;
   z-index: 1;
   background:
-    radial-gradient(circle at center, transparent 42%, rgba(8, 2, 5, .42) 100%),
-    linear-gradient(to top, rgba(255, 170, 190, .06), transparent 28%);
+    radial-gradient(circle at center, transparent 36%, rgba(4, 0, 2, .55) 100%),
+    linear-gradient(to top, rgba(255, 120, 140, .04), transparent 32%);
 }
 
 #scene {
@@ -189,7 +190,7 @@ h1 {
   display: grid;
   place-content: center;
   justify-items: center;
-  background: #12080c;
+  background: #060204;
   transition: opacity 1s ease, visibility 1s;
 }
 
@@ -227,7 +228,7 @@ h1 {
   gap: 14px;
   border: 0;
   color: #fff7f5;
-  background: rgba(9, 4, 6, .28);
+  background: rgba(6, 2, 4, .36);
   font: inherit;
   cursor: pointer;
   touch-action: manipulation;
@@ -390,7 +391,7 @@ html.is-standalone .start-gate-note {
 }
 
 html.is-standalone body {
-  background: #12080c;
+  background: #060204;
 }
 
 html.is-standalone .intro.immersive {

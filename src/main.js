@@ -7,6 +7,7 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { createBloomingFlower } from "./bloomingFlower.js";
+import { createAtmosphere } from "./atmosphere.js";
 import { detectDevice, isStandaloneApp, viewSize } from "./device.js";
 
 const BLOOM_DURATION = 11;
@@ -42,8 +43,8 @@ music.setAttribute("webkit-playsinline", "");
 music.preload = quality.isMobile ? "metadata" : "auto";
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x12080c, quality.isMobile ? 0.016 : 0.024);
-scene.background = new THREE.Color(0x12080c);
+scene.fog = new THREE.FogExp2(0x060204, quality.isMobile ? 0.022 : 0.032);
+scene.background = new THREE.Color(0x060204);
 
 const { width: startWidth, height: startHeight } = viewSize();
 const camera = new THREE.PerspectiveCamera(quality.isMobile ? 40 : 38, startWidth / startHeight, 0.1, 80);
@@ -61,12 +62,12 @@ renderer.setSize(startWidth, startHeight, false);
 renderer.setPixelRatio(quality.pixelRatio);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = quality.isMobile ? 1.28 : 1.16;
+renderer.toneMappingExposure = quality.isMobile ? 1.22 : 1.08;
 
 if (quality.environment) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = quality.isMobile ? 0.42 : 0.38;
+  scene.environmentIntensity = quality.isMobile ? 0.28 : 0.32;
 }
 
 const controls = new OrbitControls(camera, canvas);
@@ -80,42 +81,62 @@ controls.rotateSpeed = quality.isMobile ? 0.72 : 1;
 controls.touches.ONE = THREE.TOUCH.ROTATE;
 controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
 
-const keyLight = new THREE.DirectionalLight(0xfff0f4, quality.isMobile ? 2.8 : 2.4);
-keyLight.position.set(3.4, 4.8, 3.8);
+const keyLight = new THREE.DirectionalLight(0xfff0e8, quality.isMobile ? 3.2 : 2.8);
+keyLight.position.set(4.2, 5.6, 4.2);
 scene.add(keyLight);
 
-const rimLight = new THREE.DirectionalLight(0xffc8d8, quality.isMobile ? 2.6 : 2.8);
-rimLight.position.set(-3.8, 2.2, -4.4);
+const rimLight = new THREE.DirectionalLight(0xffa870, quality.isMobile ? 3.4 : 3.8);
+rimLight.position.set(-4.6, 2.8, -5.2);
 scene.add(rimLight);
 
-const fillLight = new THREE.PointLight(0xff9eb8, quality.isMobile ? 5.2 : 7.2, 14, 1.8);
-fillLight.position.set(0.4, 1.1, 2.6);
+const backLight = new THREE.DirectionalLight(0xff6080, quality.isMobile ? 1.8 : 2.4);
+backLight.position.set(0.2, 1.4, -6);
+scene.add(backLight);
+
+const fillLight = new THREE.PointLight(0xff8098, quality.isMobile ? 4.2 : 6.2, 12, 2);
+fillLight.position.set(1.2, 1.4, 3.2);
 scene.add(fillLight);
 
-const bottomLight = new THREE.PointLight(0xffb8c8, quality.isMobile ? 3.8 : 5.5, 10, 1.6);
-bottomLight.position.set(0.2, -0.85, 1.8);
+const bottomLight = new THREE.PointLight(0xff6880, quality.isMobile ? 2.8 : 4.2, 9, 1.8);
+bottomLight.position.set(0.1, -0.55, 2.2);
 scene.add(bottomLight);
 
-const backGlow = new THREE.PointLight(0xff6a8a, quality.isMobile ? 2.4 : 4.2, 16, 2);
-backGlow.position.set(-0.4, 0.55, -2.8);
-scene.add(backGlow);
+const coreLight = new THREE.PointLight(0xffc860, quality.isMobile ? 6 : 10, 4.5, 2);
+coreLight.position.set(0, 0.18, 0.2);
+scene.add(coreLight);
 
-scene.add(new THREE.HemisphereLight(0xffe8ee, 0x3a1824, quality.isMobile ? 0.95 : 0.72));
-scene.add(new THREE.AmbientLight(0xffd8e4, 0.18));
+scene.add(new THREE.HemisphereLight(0xffdce4, 0x18080c, quality.isMobile ? 0.55 : 0.42));
+scene.add(new THREE.AmbientLight(0x2a0810, 0.08));
 
 const halo = new THREE.Mesh(
-  new THREE.SphereGeometry(2.4, 32, 32),
+  new THREE.SphereGeometry(2.8, 32, 32),
   new THREE.MeshBasicMaterial({
-    color: 0xff7090,
+    color: 0xff5068,
     transparent: true,
-    opacity: 0.07,
+    opacity: 0.09,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     side: THREE.BackSide
   })
 );
-halo.position.set(0.2, 0.35, -0.4);
+halo.position.set(0.15, 0.42, -0.6);
 scene.add(halo);
+
+const goldHalo = new THREE.Mesh(
+  new THREE.SphereGeometry(1.1, 24, 24),
+  new THREE.MeshBasicMaterial({
+    color: 0xffb040,
+    transparent: true,
+    opacity: 0.12,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  })
+);
+goldHalo.position.set(0, 0.2, 0);
+scene.add(goldHalo);
+
+const atmosphere = createAtmosphere(quality);
+scene.add(atmosphere.group);
 
 const flowerRoot = new THREE.Group();
 scene.add(flowerRoot);
@@ -155,18 +176,18 @@ function applyResponsiveLayout() {
   const { width, height } = viewSize();
   const portrait = height >= width;
   if (quality.isMobile || width < 700) {
-    const scale = portrait ? 0.86 : 0.76;
-    flowerRoot.position.set(0, portrait ? 0.08 : 0.02, 0);
+    const scale = portrait ? 0.9 : 0.8;
+    flowerRoot.position.set(0, portrait ? 0.12 : 0.06, 0);
     flowerRoot.scale.setScalar(scale);
-    camera.position.set(0, portrait ? 0.34 : 0.42, portrait ? 5.15 : 4.85);
-    controls.target.set(0, portrait ? 0.18 : 0.22, 0);
-    flowerRoot.rotation.set(-0.03, 0.16, 0);
+    camera.position.set(0.15, portrait ? 0.42 : 0.48, portrait ? 4.85 : 4.55);
+    controls.target.set(0, portrait ? 0.22 : 0.26, 0);
+    flowerRoot.rotation.set(-0.02, 0.12, 0);
   } else {
-    flowerRoot.position.set(0.95, 0.08, 0);
-    flowerRoot.scale.setScalar(1);
-    camera.position.set(1.35, 0.52, 5.6);
-    controls.target.set(0.85, 0.18, 0);
-    flowerRoot.rotation.set(-0.08, 0.55, -0.16);
+    flowerRoot.position.set(0.75, 0.12, 0);
+    flowerRoot.scale.setScalar(1.02);
+    camera.position.set(1.15, 0.58, 5.35);
+    controls.target.set(0.65, 0.22, 0);
+    flowerRoot.rotation.set(-0.06, 0.48, -0.12);
   }
   controls.update();
 }
@@ -297,7 +318,9 @@ function animate() {
     flower.setBloom(0);
     flower.updateSparkles(time, 0);
     flower.updatePremiumEffects(time, 0);
-    halo.scale.setScalar(1 + Math.sin(time * 0.8) * 0.04);
+    atmosphere.update(time, 0);
+    halo.scale.setScalar(1 + Math.sin(time * 0.8) * 0.05);
+    goldHalo.scale.setScalar(0.85 + Math.sin(time * 1.1) * 0.06);
     composer.render();
     return;
   }
@@ -329,14 +352,22 @@ function animate() {
   flower.updateSparkles(time, displayProgress);
   flower.updateIdle(time, displayProgress);
   flower.updatePremiumEffects(time, displayProgress);
+  atmosphere.update(time, displayProgress);
 
-  const glowPulse = 0.9 + Math.sin(time * 1.2) * 0.1 + displayProgress * 0.25;
-  halo.scale.setScalar((1.05 + displayProgress * 0.18) * glowPulse);
-  halo.material.opacity = 0.05 + displayProgress * 0.08;
-  bloomPass.strength = quality.bloomStrength * (0.82 + displayProgress * 0.38);
-  fillLight.intensity = (quality.isMobile ? 5.2 : 7.2) * (0.85 + displayProgress * 0.35);
-  bottomLight.intensity = (quality.isMobile ? 3.8 : 5.5) * (0.9 + displayProgress * 0.28);
-  backGlow.intensity = (quality.isMobile ? 2.4 : 4.2) * (0.75 + displayProgress * 0.45);
+  const glowPulse = 0.88 + Math.sin(time * 1.15) * 0.12 + displayProgress * 0.32;
+  halo.scale.setScalar((1.08 + displayProgress * 0.22) * glowPulse);
+  halo.material.opacity = 0.06 + displayProgress * 0.1;
+  goldHalo.scale.setScalar((0.75 + displayProgress * 0.45) * (0.9 + Math.sin(time * 1.4) * 0.1));
+  goldHalo.material.opacity = 0.06 + displayProgress * 0.16;
+
+  bloomPass.strength = quality.bloomStrength * (0.75 + displayProgress * 0.55);
+  bloomPass.threshold = quality.bloomThreshold - displayProgress * 0.12;
+
+  coreLight.intensity = (quality.isMobile ? 6 : 10) * (0.35 + displayProgress * 0.85);
+  keyLight.intensity = (quality.isMobile ? 3.2 : 2.8) * (0.82 + displayProgress * 0.28);
+  rimLight.intensity = (quality.isMobile ? 3.4 : 3.8) * (0.78 + displayProgress * 0.42);
+  fillLight.intensity = (quality.isMobile ? 4.2 : 6.2) * (0.72 + displayProgress * 0.38);
+  bottomLight.intensity = (quality.isMobile ? 2.8 : 4.2) * (0.65 + displayProgress * 0.35);
 
   flowerRoot.position.y = flowerRoot.userData.baseY + Math.sin(time * 0.45) * 0.02;
   controls.update(delta);

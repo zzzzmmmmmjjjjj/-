@@ -21,17 +21,20 @@ export function detectDevice() {
     pixelRatio: isMobile ? Math.min(devicePixelRatio || 1, 1.75) : Math.min(devicePixelRatio || 1, 2),
     antialias: !isMobile,
     postBloom: true,
-    bloomStrength: isMobile ? 0.26 : 0.42,
-    bloomRadius: isMobile ? 0.38 : 0.52,
-    bloomThreshold: isMobile ? 0.78 : 0.82,
+    bloomStrength: isMobile ? 0.34 : 0.58,
+    bloomRadius: isMobile ? 0.48 : 0.72,
+    bloomThreshold: isMobile ? 0.58 : 0.52,
     environment: !lowPower || !isMobile,
-    transmission: !isMobile,
+    transmission: true,
     textureSize: isMobile ? 512 : 1024,
-    petalSegments: isMobile ? { w: 16, l: 22 } : { w: 40, l: 56 },
+    petalSegments: isMobile ? { w: 18, l: 24 } : { w: 40, l: 56 },
     lowPoly: isMobile,
-    sparkleCount: isMobile ? 220 : 900,
-    stamenCount: isMobile ? 18 : 48,
-    compactStem: isMobile
+    sparkleCount: isMobile ? 280 : 1100,
+    stamenCount: isMobile ? 22 : 56,
+    compactStem: isMobile,
+    floatingPetals: isMobile ? 14 : 32,
+    goldDustCount: isMobile ? 80 : 180,
+    bokehCount: isMobile ? 10 : 24
   };
 }
 
