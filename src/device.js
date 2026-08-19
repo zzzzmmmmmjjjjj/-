@@ -34,7 +34,8 @@ export function detectDevice() {
     compactStem: isMobile,
     floatingPetals: isMobile ? 14 : 32,
     goldDustCount: isMobile ? 80 : 180,
-    bokehCount: isMobile ? 10 : 24
+    bokehCount: isMobile ? 10 : 24,
+    petMode: false
   };
 }
 

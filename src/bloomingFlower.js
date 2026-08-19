@@ -447,15 +447,24 @@ export function createBloomingFlower(quality = {}) {
     blossom.rotation.y = Math.sin(time * 0.1) * 0.035;
   }
 
+  function updatePetBreathing(time) {
+    const breath = 1 + Math.sin(time * 0.55) * 0.018 + Math.sin(time * 1.3) * 0.006;
+    blossom.scale.setScalar(breath);
+    glowRing.rotation.z = time * 0.12;
+    glowRing.material.opacity = 0.14 + Math.sin(time * 0.8) * 0.03;
+  }
+
   setBloom(0);
 
   return {
     group,
+    blossom,
     coreGlow,
     stamenMaterial,
     setBloom,
     updateSparkles,
     updateIdle,
-    updatePremiumEffects
+    updatePremiumEffects,
+    updatePetBreathing
   };
 }

@@ -405,6 +405,105 @@ html.is-standalone .music {
   opacity: .72;
 }
 
+.pet-enter {
+  position: fixed;
+  right: calc(16px + var(--safe-right));
+  top: calc(22px + var(--safe-top));
+  z-index: 4;
+  display: grid;
+  gap: 4px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 190, 200, .22);
+  border-radius: 16px;
+  color: rgba(255, 245, 243, .82);
+  background: rgba(12, 4, 6, .55);
+  backdrop-filter: blur(12px);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pet-enter span {
+  font-size: 11px;
+  letter-spacing: .16em;
+}
+
+.pet-enter small {
+  color: rgba(255, 243, 241, .45);
+  font-size: 9px;
+  letter-spacing: .08em;
+}
+
+.pet-exit {
+  position: fixed;
+  top: calc(16px + var(--safe-top));
+  right: calc(16px + var(--safe-right));
+  z-index: 7;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 190, 200, .24);
+  border-radius: 999px;
+  color: rgba(255, 245, 243, .72);
+  background: rgba(12, 4, 6, .48);
+  backdrop-filter: blur(10px);
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: .14em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pet-hint {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + var(--safe-bottom));
+  z-index: 4;
+  margin: 0;
+  transform: translateX(-50%);
+  color: rgba(255, 245, 243, .34);
+  font-size: 10px;
+  letter-spacing: .16em;
+  pointer-events: none;
+}
+
+html.is-pet-mode .intro,
+html.is-pet-mode .bloom,
+html.is-pet-mode .music,
+html.is-pet-mode .hint,
+html.is-pet-mode .pet-enter,
+html.is-pet-mode .install-banner,
+html.is-pet-mode .install-guide,
+html.is-pet-mode .start-gate {
+  display: none !important;
+}
+
+html.is-pet-mode .pet-exit,
+html.is-pet-mode .pet-hint {
+  display: block;
+}
+
+html.is-pet-mode .pet-hint.hidden {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+}
+
+html.is-pet-mode body::after {
+  background:
+    radial-gradient(circle at center, transparent 40%, rgba(4, 0, 2, .62) 100%),
+    linear-gradient(to top, rgba(255, 120, 140, .05), transparent 36%);
+}
+
+@media (max-width: 640px) {
+  .pet-enter {
+    right: calc(12px + var(--safe-right));
+    top: calc(18px + var(--safe-top));
+    padding: 8px 12px;
+  }
+}
+
 @keyframes pulse {
   0%, 100% { transform: scale(1); opacity: .7; }
   50% { transform: scale(1.08); opacity: 1; }

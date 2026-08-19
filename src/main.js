@@ -9,8 +9,10 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { createBloomingFlower } from "./bloomingFlower.js";
 import { createAtmosphere } from "./atmosphere.js";
 import { detectDevice, isStandaloneApp, viewSize } from "./device.js";
+import { bindWakeLockLifecycle, detectPetMode, releaseWakeLock, requestWakeLock, setPetMode } from "./petMode.js";
 
 const BLOOM_DURATION = 11;
+const PET_BLOOM_DURATION = 8;
 const BLOOM_HOLD = 0.7;
 const CLOSE_DURATION = 1.1;
 
@@ -28,13 +30,18 @@ const installBtn = document.querySelector("#install-btn");
 const installClose = document.querySelector(".install-close");
 const installGuide = document.querySelector(".install-guide");
 const installGuideClose = document.querySelector(".install-guide-close");
+const petExit = document.querySelector(".pet-exit");
+const petHint = document.querySelector(".pet-hint");
 const assetUrl = (fileName) => `${import.meta.env.BASE_URL}${fileName}`;
 const quality = detectDevice();
 const standalone = isStandaloneApp();
+const petMode = detectPetMode(standalone);
+quality.petMode = petMode;
 
 if (quality.isMobile) document.documentElement.classList.add("is-mobile");
 if (quality.isWeChat) document.documentElement.classList.add("is-wechat");
 if (standalone) document.documentElement.classList.add("is-standalone");
+if (petMode) document.documentElement.classList.add("is-pet-mode");
 
 music.src = assetUrl("the-rose.mp3");
 music.volume = 0.42;
@@ -75,7 +82,8 @@ controls.enableDamping = true;
 controls.enablePan = false;
 controls.minDistance = 3.2;
 controls.maxDistance = 9;
-controls.autoRotate = false;
+controls.autoRotate = petMode;
+controls.autoRotateSpeed = petMode ? (quality.isMobile ? 0.42 : 0.55) : 0;
 controls.target.set(0.85, 0.05, 0);
 controls.rotateSpeed = quality.isMobile ? 0.72 : 1;
 controls.touches.ONE = THREE.TOUCH.ROTATE;
@@ -166,10 +174,10 @@ const lockedProgress = (() => {
   const value = Number(raw);
   return Number.isFinite(value) ? THREE.MathUtils.clamp(value, 0, 1) : null;
 })();
-let awaitingStart = quality.isMobile && lockedProgress === null && !standalone;
-if (lockedProgress !== null || standalone) {
+let awaitingStart = quality.isMobile && lockedProgress === null && !standalone && !petMode;
+if (lockedProgress !== null || standalone || petMode) {
   awaitingStart = false;
-  isPlayingBloom = false;
+  isPlayingBloom = petMode ? true : false;
 }
 
 function applyResponsiveLayout() {
@@ -209,12 +217,24 @@ function replayBloom() {
   if (awaitingStart || isClosing || isPlayingBloom) return;
   isClosing = true;
   closeElapsed = 0;
-  bloomLabel.textContent = "收拢中";
+  bloomLabel.textContent = petMode ? "收拢中" : "收拢中";
+  lastPetReplay = clock.getElapsedTime();
 }
 
 bloomButton.addEventListener("click", (event) => {
   event.stopPropagation();
   replayBloom();
+});
+
+let lastTap = 0;
+canvas.addEventListener("touchend", (event) => {
+  if (!petMode) return;
+  const now = Date.now();
+  if (now - lastTap < 320) {
+    event.preventDefault();
+    replayBloom();
+  }
+  lastTap = now;
 });
 
 function updateMusicUI(isPlaying) {
@@ -244,7 +264,8 @@ musicButton.addEventListener("click", async (event) => {
 function beginBloom() {
   startGate?.classList.add("hidden");
   installBanner?.classList.add("hidden");
-  hint?.classList.toggle("hidden", !quality.isMobile || standalone);
+  hint?.classList.toggle("hidden", !quality.isMobile || standalone || petMode);
+  petHint?.classList.toggle("hidden", !petMode);
   if (!awaitingStart && isPlayingBloom) return;
   awaitingStart = false;
   clock.stop();
@@ -252,11 +273,12 @@ function beginBloom() {
   bloomElapsed = 0;
   closeElapsed = 0;
   isClosing = false;
-  isPlayingBloom = lockedProgress === null;
-  displayProgress = lockedProgress ?? 0;
+  isPlayingBloom = lockedProgress === null && !petMode ? true : petMode || lockedProgress === null;
+  displayProgress = lockedProgress ?? (petMode ? 0 : 0);
   flower.setBloom(displayProgress);
-  bloomLabel.textContent = lockedProgress !== null ? "预览" : "开放中";
-  playMusic();
+  bloomLabel.textContent = petMode ? "陪伴中" : lockedProgress !== null ? "预览" : "开放中";
+  if (!petMode) playMusic();
+  if (petMode) requestWakeLock();
 }
 
 startGate?.addEventListener("click", beginBloom);
@@ -301,9 +323,31 @@ addEventListener("beforeinstallprompt", (event) => {
   showInstallBanner();
 });
 
-if (quality.isIOS && !standalone && !quality.isWeChat) {
+if (quality.isIOS && !standalone && !quality.isWeChat && !petMode) {
   setTimeout(showInstallBanner, 2800);
 }
+
+petEnter?.addEventListener("click", () => {
+  setPetMode(true);
+  location.search = "?pet=1";
+});
+
+petExit?.addEventListener("click", () => {
+  setPetMode(false);
+  releaseWakeLock();
+  const url = new URL(location.href);
+  url.searchParams.delete("pet");
+  location.href = url.toString();
+});
+
+let lastPetReplay = 0;
+const PET_REPLAY_INTERVAL = 180;
+
+bindWakeLockLifecycle(() => {
+  if (petMode && displayProgress >= 0.99) {
+    clock.start();
+  }
+});
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {});
@@ -339,20 +383,29 @@ function animate() {
       bloomLabel.textContent = "开放中";
     }
   } else if (isPlayingBloom) {
+    const duration = petMode ? PET_BLOOM_DURATION : BLOOM_DURATION;
+    const hold = petMode ? 0.35 : BLOOM_HOLD;
     bloomElapsed += delta;
-    displayProgress = THREE.MathUtils.clamp((bloomElapsed - BLOOM_HOLD) / BLOOM_DURATION, 0, 1);
+    displayProgress = THREE.MathUtils.clamp((bloomElapsed - hold) / duration, 0, 1);
     if (displayProgress >= 1) {
       isPlayingBloom = false;
-      bloomLabel.textContent = "再开放一次";
-      if (standalone) intro?.classList.add("immersive");
+      bloomLabel.textContent = petMode ? "陪伴中" : "再开放一次";
+      if (standalone || petMode) intro?.classList.add("immersive");
     }
+  } else if (petMode && lockedProgress === null && time - lastPetReplay > PET_REPLAY_INTERVAL) {
+    lastPetReplay = time;
+    isClosing = true;
+    closeElapsed = 0;
   }
 
+  const effectProgress = petMode ? Math.max(displayProgress, 0.92) : displayProgress;
+
   flower.setBloom(displayProgress);
-  flower.updateSparkles(time, displayProgress);
-  flower.updateIdle(time, displayProgress);
-  flower.updatePremiumEffects(time, displayProgress);
-  atmosphere.update(time, displayProgress);
+  flower.updateSparkles(time, effectProgress);
+  flower.updateIdle(time, effectProgress);
+  flower.updatePremiumEffects(time, effectProgress);
+  if (petMode && displayProgress >= 0.95) flower.updatePetBreathing(time);
+  atmosphere.update(time, effectProgress);
 
   const glowPulse = 0.88 + Math.sin(time * 1.15) * 0.12 + displayProgress * 0.32;
   halo.scale.setScalar((1.08 + displayProgress * 0.22) * glowPulse);
@@ -360,14 +413,16 @@ function animate() {
   goldHalo.scale.setScalar((0.75 + displayProgress * 0.45) * (0.9 + Math.sin(time * 1.4) * 0.1));
   goldHalo.material.opacity = 0.06 + displayProgress * 0.16;
 
-  bloomPass.strength = quality.bloomStrength * (0.75 + displayProgress * 0.55);
-  bloomPass.threshold = quality.bloomThreshold - displayProgress * 0.12;
+  bloomPass.strength = quality.bloomStrength * (0.75 + effectProgress * (petMode ? 0.65 : 0.55));
+  bloomPass.threshold = quality.bloomThreshold - effectProgress * 0.12;
 
-  coreLight.intensity = (quality.isMobile ? 6 : 10) * (0.35 + displayProgress * 0.85);
-  keyLight.intensity = (quality.isMobile ? 3.2 : 2.8) * (0.82 + displayProgress * 0.28);
-  rimLight.intensity = (quality.isMobile ? 3.4 : 3.8) * (0.78 + displayProgress * 0.42);
-  fillLight.intensity = (quality.isMobile ? 4.2 : 6.2) * (0.72 + displayProgress * 0.38);
-  bottomLight.intensity = (quality.isMobile ? 2.8 : 4.2) * (0.65 + displayProgress * 0.35);
+  coreLight.intensity = (quality.isMobile ? 6 : 10) * (0.35 + effectProgress * 0.85);
+  keyLight.intensity = (quality.isMobile ? 3.2 : 2.8) * (0.82 + effectProgress * 0.28);
+  rimLight.intensity = (quality.isMobile ? 3.4 : 3.8) * (0.78 + effectProgress * 0.42);
+  fillLight.intensity = (quality.isMobile ? 4.2 : 6.2) * (0.72 + effectProgress * 0.38);
+  bottomLight.intensity = (quality.isMobile ? 2.8 : 4.2) * (0.65 + effectProgress * 0.35);
+
+  if (petMode) controls.autoRotate = true;
 
   flowerRoot.position.y = flowerRoot.userData.baseY + Math.sin(time * 0.45) * 0.02;
   controls.update(delta);

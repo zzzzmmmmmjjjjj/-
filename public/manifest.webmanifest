@@ -2,7 +2,7 @@
   "name": "朝暮与卿 · 缓放牡丹",
   "short_name": "朝暮与卿",
   "description": "桌面随时赏 3D 缓放牡丹，轻触即开",
-  "start_url": "./",
+  "start_url": "./?pet=1",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "fullscreen", "minimal-ui"],
@@ -28,6 +28,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "桌面宠物",
+      "short_name": "宠物",
+      "description": "自动旋转、粒子常亮",
+      "url": "./?pet=1",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "欣赏花开",
+      "short_name": "花开",
+      "description": "完整缓放动画与音乐",
+      "url": "./?pet=0",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
