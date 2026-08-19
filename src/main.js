@@ -87,7 +87,9 @@ let displayProgress = 0;
 let isPlayingBloom = true;
 let isClosing = false;
 const lockedProgress = (() => {
-  const value = Number(new URLSearchParams(location.search).get("p"));
+  const raw = new URLSearchParams(location.search).get("p");
+  if (raw === null || raw.trim() === "") return null;
+  const value = Number(raw);
   return Number.isFinite(value) ? THREE.MathUtils.clamp(value, 0, 1) : null;
 })();
 if (lockedProgress !== null) isPlayingBloom = false;
