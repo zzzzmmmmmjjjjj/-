@@ -2,18 +2,26 @@
 
 :root {
   color: #fff7f5;
-  font-family: "Montserrat", "PingFang SC", sans-serif;
+  font-family: "Montserrat", "PingFang SC", "Noto Sans SC", sans-serif;
   background: #090406;
   font-synthesis: none;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {
   width: 100%;
   height: 100%;
+  height: 100dvh;
   margin: 0;
   overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -30,14 +38,15 @@ body {
   width: 100%;
   height: 100%;
   cursor: grab;
+  touch-action: none;
 }
 
 #scene:active { cursor: grabbing; }
 
 .intro {
   position: fixed;
-  top: clamp(28px, 6vw, 76px);
-  left: clamp(24px, 6vw, 88px);
+  top: calc(clamp(28px, 6vw, 76px) + var(--safe-top));
+  left: calc(clamp(24px, 6vw, 88px) + var(--safe-left));
   z-index: 2;
   pointer-events: none;
 }
@@ -68,12 +77,13 @@ h1 {
 
 .bloom {
   position: fixed;
-  right: clamp(24px, 6vw, 88px);
-  bottom: clamp(28px, 6vw, 70px);
+  right: calc(clamp(24px, 6vw, 88px) + var(--safe-right));
+  bottom: calc(clamp(28px, 6vw, 70px) + var(--safe-bottom));
   z-index: 3;
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 44px;
   border: 0;
   color: rgba(255, 245, 243, .7);
   background: transparent;
@@ -81,6 +91,7 @@ h1 {
   font-size: 11px;
   letter-spacing: .24em;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .bloom > span:first-child {
@@ -109,18 +120,20 @@ h1 {
 
 .music {
   position: fixed;
-  left: clamp(24px, 6vw, 88px);
-  bottom: clamp(28px, 6vw, 70px);
+  left: calc(clamp(24px, 6vw, 88px) + var(--safe-left));
+  bottom: calc(clamp(28px, 6vw, 70px) + var(--safe-bottom));
   z-index: 3;
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   color: rgba(255, 245, 243, .68);
   background: transparent;
   font: inherit;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .music-bars {
@@ -176,17 +189,104 @@ h1 {
 }
 
 .loading p { color: rgba(255,255,255,.4); font-size: 10px; letter-spacing: .25em; }
-.loading.hidden { opacity: 0; visibility: hidden; }
+
+.hint {
+  position: fixed;
+  left: 50%;
+  bottom: calc(88px + var(--safe-bottom));
+  z-index: 3;
+  margin: 0;
+  transform: translateX(-50%);
+  color: rgba(255, 245, 243, .38);
+  font-size: 10px;
+  letter-spacing: .22em;
+  pointer-events: none;
+}
+
+.start-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  border: 0;
+  color: #fff7f5;
+  background: rgba(9, 4, 6, .28);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.start-gate-ring {
+  width: 72px;
+  height: 72px;
+  border: 1px solid rgba(255, 205, 210, .45);
+  border-radius: 50%;
+  box-shadow: 0 0 32px rgba(255, 140, 160, .18);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+.start-gate strong {
+  font-family: "Noto Serif SC", serif;
+  font-size: clamp(22px, 5vw, 32px);
+  font-weight: 300;
+  letter-spacing: .28em;
+}
+
+.start-gate-note {
+  max-width: 16em;
+  color: rgba(255, 243, 241, .48);
+  font-size: 11px;
+  letter-spacing: .12em;
+  line-height: 1.7;
+}
+
+.start-gate,
+.hint,
+.loading {
+  transition: opacity .6s ease, visibility .6s;
+}
+
+.start-gate.hidden,
+.hint.hidden,
+.loading.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: .7; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 640px) {
-  .intro { top: 34px; }
+  .intro { top: calc(22px + var(--safe-top)); left: calc(18px + var(--safe-left)); }
+  h1 { font-size: clamp(28px, 9vw, 42px); letter-spacing: .1em; }
   .subtitle { font-size: 9px; }
-  .bloom { right: 22px; bottom: 30px; }
-  .music { left: 22px; bottom: 30px; }
+  .bloom { right: calc(16px + var(--safe-right)); bottom: calc(22px + var(--safe-bottom)); }
+  .music { left: calc(16px + var(--safe-left)); bottom: calc(22px + var(--safe-bottom)); }
+  .hint { bottom: calc(78px + var(--safe-bottom)); }
+}
+
+@media (pointer: coarse) {
+  .bloom > span:first-child,
+  .music-bars {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+html.is-wechat .start-gate-note {
+  color: rgba(255, 214, 180, .8);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loading span { animation: none; }
+  .loading span,
+  .start-gate-ring,
+  .music.playing .music-bars i { animation: none; }
 }

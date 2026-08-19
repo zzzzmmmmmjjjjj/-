@@ -2,9 +2,20 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no"
+    />
     <meta name="theme-color" content="#090406" />
-    <link rel="icon" href="data:," />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="朝暮与卿" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="description" content="可在手机和电脑浏览器中观看的高清缓放牡丹。" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
     <title>朝暮与卿 · 缓放牡丹</title>
   </head>
   <body>
@@ -18,7 +29,7 @@
 
     <button class="bloom" type="button" aria-label="重新播放花朵开放">
       <span></span>
-      <span class="bloom-label">开放中</span>
+      <span class="bloom-label">轻触开启</span>
     </button>
 
     <button class="music" type="button" aria-label="播放背景音乐" aria-pressed="false">
@@ -26,7 +37,15 @@
       <span class="music-copy"><strong>The Rose</strong><small>手嶌葵</small></span>
     </button>
 
-    <audio id="background-music" loop preload="auto"></audio>
+    <p class="hint hidden">单指旋转 · 双指缩放</p>
+
+    <button class="start-gate" type="button">
+      <span class="start-gate-ring" aria-hidden="true"></span>
+      <strong>轻触屏幕，花开</strong>
+      <small class="start-gate-note">手机浏览器可直接观看 · 微信请点右上角用浏览器打开</small>
+    </button>
+
+    <audio id="background-music" loop playsinline webkit-playsinline preload="metadata"></audio>
 
     <div class="loading" role="status">
       <span></span>

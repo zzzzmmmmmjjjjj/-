@@ -44,8 +44,7 @@ function drawBranch(ctx, x, y, angle, length, width, depth, rand, color) {
   }
 }
 
-export function createPetalMaps(kind = "outer") {
-  const size = 1024;
+export function createPetalMaps(kind = "outer", size = 1024) {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext("2d");
