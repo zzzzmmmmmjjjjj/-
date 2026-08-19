@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#090406" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="朝暮与卿" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="description" content="可在手机和电脑浏览器中观看的高清缓放牡丹。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="朝暮与卿" />
+    <meta property="og:title" content="朝暮与卿 · 缓放牡丹" />
+    <meta
+      property="og:description"
+      content="高清三维牡丹，约 11 秒缓缓开放。手机轻触即看，可分享给朋友。"
+    />
+    <meta property="og:url" content="https://zzzzmmmmmjjjjj.github.io/-/" />
+    <meta
+      property="og:image"
+      content="https://zzzzmmmmmjjjjj.github.io/-/share-cover.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="朝暮与卿 · 缓放牡丹" />
+    <meta
+      name="twitter:description"
+      content="高清三维牡丹，约 11 秒缓缓开放。手机轻触即看，可分享给朋友。"
+    />
+    <meta
+      name="twitter:image"
+      content="https://zzzzmmmmmjjjjj.github.io/-/share-cover.png"
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <title>朝暮与卿 · 缓放牡丹</title>
+    <script type="module" crossorigin src="./assets/index-CBeeD4-g.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BIv57dEI.css">
+  </head>
+  <body>
+    <canvas id="scene" aria-label="高清缓放的三维牡丹"></canvas>
+
+    <header class="intro">
+      <p class="eyebrow">A FLOWER UNFOLDING</p>
+      <h1>朝暮与卿</h1>
+      <p class="subtitle">花开未央 · 此心不渝</p>
+    </header>
+
+    <button class="bloom" type="button" aria-label="重新播放花朵开放">
+      <span></span>
+      <span class="bloom-label">轻触开启</span>
+    </button>
+
+    <button class="music" type="button" aria-label="播放背景音乐" aria-pressed="false">
+      <span class="music-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="music-copy"><strong>The Rose</strong><small>手嶌葵</small></span>
+    </button>
+
+    <p class="hint hidden">单指旋转 · 双指缩放</p>
+
+    <button class="start-gate" type="button">
+      <span class="start-gate-ring" aria-hidden="true"></span>
+      <strong>轻触屏幕，花开</strong>
+      <small class="start-gate-note">手机浏览器可直接观看 · 微信请点右上角用浏览器打开</small>
+    </button>
+
+    <audio id="background-music" loop playsinline webkit-playsinline preload="metadata"></audio>
+
+    <div class="loading" role="status">
+      <span></span>
+      <p>正在绘制花瓣</p>
+    </div>
+
+  </body>
+</html>

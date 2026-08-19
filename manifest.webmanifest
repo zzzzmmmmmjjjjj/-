@@ -1,0 +1,19 @@
+{
+  "name": "朝暮与卿",
+  "short_name": "朝暮与卿",
+  "description": "可在手机和电脑浏览器中观看的高清缓放牡丹",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090406",
+  "theme_color": "#090406",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
