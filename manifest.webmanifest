@@ -7,8 +7,8 @@
   "display": "standalone",
   "display_override": ["standalone", "fullscreen", "minimal-ui"],
   "orientation": "portrait-primary",
-  "background_color": "#12080c",
-  "theme_color": "#12080c",
+  "background_color": "#060204",
+  "theme_color": "#060204",
   "categories": ["entertainment", "lifestyle"],
   "icons": [
     {
