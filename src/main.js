@@ -263,7 +263,7 @@ function boot() {
 
   const { width: startWidth, height: startHeight } = viewSize();
   camera = new THREE.PerspectiveCamera(quality.isMobile ? 40 : 38, startWidth / startHeight, 0.1, 80);
-  camera.position.set(1.35, 0.42, 5.6);
+  camera.position.set(1.28, 0.38, 5.4);
 
   renderer = createRenderer();
   renderer.setSize(startWidth, startHeight, false);
@@ -288,7 +288,7 @@ function boot() {
   controls.maxDistance = 9;
   controls.autoRotate = petMode;
   controls.autoRotateSpeed = petMode ? (quality.isMobile ? 0.42 : 0.55) : 0;
-  controls.target.set(0.85, 0.05, 0);
+  controls.target.set(0.72, 0.08, 0);
   controls.rotateSpeed = quality.isMobile ? 0.72 : 1;
   controls.touches.ONE = THREE.TOUCH.ROTATE;
   controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
@@ -319,6 +319,10 @@ function boot() {
 
   scene.add(new THREE.HemisphereLight(0xffeef2, 0x1a0810, quality.isMobile ? 0.42 : 0.35));
   scene.add(new THREE.AmbientLight(0x2a1018, 0.06));
+
+  const topLight = new THREE.DirectionalLight(0xfff6f8, quality.isMobile ? 0.55 : 0.75);
+  topLight.position.set(0.2, 5.5, 2.2);
+  scene.add(topLight);
 
   halo = new THREE.Mesh(
     new THREE.SphereGeometry(2.6, 32, 32),

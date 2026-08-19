@@ -13,10 +13,13 @@ function mulberry32(seed) {
 
 function rosePetalMask(u, v) {
   const x = (u - 0.5) * 2;
-  const width = Math.pow(Math.sin(Math.PI * Math.pow(Math.min(v, 0.995), 0.72)), 0.62) * (0.28 + v * 0.74);
-  const edge = 1 - Math.pow(Math.abs(x) / Math.max(width, 1e-4), 2.4);
-  const notch = v > 0.82 ? 1 - Math.pow((v - 0.82) / 0.18, 1.6) * Math.max(0, 1 - Math.abs(x) * 1.4) : 1;
-  return THREE.MathUtils.clamp(edge * notch, 0, 1);
+  const widthProfile =
+    Math.pow(Math.sin(Math.PI * Math.pow(Math.min(v, 0.995), 0.58)), 0.64) * (0.16 + Math.pow(v, 0.82) * 0.84);
+  const edge = 1 - Math.pow(Math.abs(x) / Math.max(widthProfile, 0.01), 2.15);
+  const heartNotch =
+    v > 0.86 ? 1 - Math.pow((v - 0.86) / 0.14, 1.25) * Math.max(0, 1 - Math.abs(x) * 0.85) : 1;
+  const wave = 1 + Math.sin(v * 16 + u * 9) * 0.025 * v;
+  return THREE.MathUtils.clamp(edge * heartNotch * wave, 0, 1);
 }
 
 function drawBranch(ctx, x, y, angle, length, width, depth, rand, color) {
@@ -60,22 +63,22 @@ export function createPetalMaps(kind = "outer", size = 1024) {
 
   const palettes = {
     inner: {
-      deep: [228, 168, 178],
-      mid: [244, 198, 206],
-      tip: [252, 228, 232],
-      edge: [255, 240, 244]
+      deep: [210, 138, 152],
+      mid: [232, 178, 188],
+      tip: [248, 218, 224],
+      edge: [255, 236, 240]
     },
     mid: {
-      deep: [236, 182, 192],
-      mid: [248, 210, 218],
-      tip: [255, 236, 240],
-      edge: [255, 246, 248]
+      deep: [222, 158, 170],
+      mid: [242, 198, 206],
+      tip: [252, 228, 232],
+      edge: [255, 244, 246]
     },
     outer: {
-      deep: [242, 198, 206],
-      mid: [252, 222, 228],
-      tip: [255, 244, 246],
-      edge: [255, 250, 252]
+      deep: [232, 178, 188],
+      mid: [248, 214, 220],
+      tip: [255, 240, 242],
+      edge: [255, 250, 251]
     }
   };
   const palette = palettes[kind];
@@ -87,12 +90,13 @@ export function createPetalMaps(kind = "outer", size = 1024) {
       const mask = rosePetalMask(u, v);
       const xNorm = Math.abs((u - 0.5) * 2);
       const edgeGlow = Math.pow(1 - xNorm, 2.2) * Math.pow(v, 0.62);
-      const velvet = 0.92 + Math.sin(u * size * 0.07) * Math.sin(v * size * 0.05) * 0.04;
-      const t = Math.pow(v, 0.88);
+      const velvet = 0.9 + Math.sin(u * size * 0.08) * Math.sin(v * size * 0.06) * 0.05;
+      const baseShadow = Math.pow(1 - v, 1.8) * 0.18;
+      const t = Math.pow(v, 0.82);
       const baseMix = t * (1 - t) * 4;
-      const r = (palette.deep[0] * (1 - t) + palette.mid[0] * baseMix + palette.tip[0] * t) * velvet;
-      const g = (palette.deep[1] * (1 - t) + palette.mid[1] * baseMix + palette.tip[1] * t) * velvet;
-      const b = (palette.deep[2] * (1 - t) + palette.mid[2] * baseMix + palette.tip[2] * t) * velvet;
+      const r = (palette.deep[0] * (1 - t) * (1 + baseShadow) + palette.mid[0] * baseMix + palette.tip[0] * t) * velvet;
+      const g = (palette.deep[1] * (1 - t) * (1 + baseShadow) + palette.mid[1] * baseMix + palette.tip[1] * t) * velvet;
+      const b = (palette.deep[2] * (1 - t) * (1 + baseShadow) + palette.mid[2] * baseMix + palette.tip[2] * t) * velvet;
       const grain = (rand() - 0.5) * 5;
       const i = (y * size + x) * 4;
       data[i] = THREE.MathUtils.clamp(r + grain, 0, 255);
@@ -125,9 +129,10 @@ export function createPetalMaps(kind = "outer", size = 1024) {
   ctx.restore();
   ctx.globalCompositeOperation = "source-over";
 
-  const gloss = ctx.createLinearGradient(0, 0, size * 0.6, size);
-  gloss.addColorStop(0, "rgba(255,255,255,0.12)");
-  gloss.addColorStop(0.5, "rgba(255,255,255,0)");
+  const gloss = ctx.createLinearGradient(size * 0.15, 0, size * 0.75, size);
+  gloss.addColorStop(0, "rgba(255,255,255,0.16)");
+  gloss.addColorStop(0.35, "rgba(255,255,255,0.04)");
+  gloss.addColorStop(0.7, "rgba(255,255,255,0)");
   ctx.fillStyle = gloss;
   ctx.fillRect(0, 0, size, size);
 
